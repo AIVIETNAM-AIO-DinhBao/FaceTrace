@@ -8,3 +8,5 @@ scikit-learn>=1.4
 PyYAML>=6.0
 tqdm>=4.66
 jupyter>=1.0
+matplotlib>=3.8
+ipykernel>=6.30
