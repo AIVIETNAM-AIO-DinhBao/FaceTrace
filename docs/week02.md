@@ -52,6 +52,20 @@ Nếu không tìm được source/generator cho các ảnh train, ghi nhận rõ
 
 ## Phase 2 — Cố định split và protocol
 
+**Trạng thái: hoàn tất theo nhánh không có source metadata (2026-09-28).** Audit xác nhận manifest không có source/generator và ảnh không có EXIF software để xác định nguồn. Vì vậy split dưới đây chỉ là in-domain/protocol sanity check; chưa có `test_unseen` và chưa thể dùng để kết luận H1.
+
+Protocol đã khóa:
+
+- Script tái tạo: `scripts/create_splits.py`; seed `42`; stratified theo nhãn với 20% validation.
+- Số lượng: train 1.600 ảnh (800 Real, 800 Fake); validation 400 ảnh (200 Real, 200 Fake).
+- Manifest: `outputs/splits/train.csv`, `val.csv`; bảng đếm tại `counts_by_split_label_source.csv`; protocol máy đọc tại `protocol.json`. Đây là artifact local bị Git ignore.
+- `image_path` là đường dẫn tương đối từ repository root; `source` để trống và `source_status=unavailable`, không đại diện cho một source chung.
+- Preprocessing tối thiểu: kích thước 224 theo config baseline, dùng processor chính thức của checkpoint DINOv3, không chuyển grayscale hoặc thêm augmentation. Threshold cố định `0.5`; chọn head/checkpoint theo validation AUROC.
+- Kiểm tra khi tạo split: không giao nhau theo ID/path, đủ 2.000 mẫu và mọi đường dẫn tồn tại.
+
+Không tạo `test_unseen.csv`; public/private test không nhãn vẫn bị loại khỏi metric. Cần bổ sung metadata nguồn hoặc dữ liệu có nguồn xác định trước khi có thể tạo split unseen-source.
+
+
 **Việc làm**
 
 1. Nếu có source/generator metadata: dành tối thiểu một nguồn Fake hoàn toàn khỏi train và validation làm `test_unseen`; tạo `train.csv`, `val.csv`, `test_unseen.csv` theo nhóm nguồn, đồng thời giữ cân bằng nhãn trong khả năng dữ liệu cho phép.
@@ -66,6 +80,12 @@ Nếu không tìm được source/generator cho các ảnh train, ghi nhận rõ
 - Bảng số lượng theo split × nhãn × source và xác nhận không trùng mẫu giữa các split.
 
 ## Phase 3 — Hoàn thiện pipeline và baseline Global
+
+**Tiến độ (2026-09-28):** Đã nối dataset từ manifest, Frozen DINOv3 global/CLS feature, classifier và validation evaluator trong `src/`. Notebook `notebooks/01_global_baseline.ipynb` là workflow chạy B0 linear và B1 MLP trên Kaggle GPU; notebook tái tạo đúng split Phase 2 từ dataset được mount, trích feature trong lúc chạy baseline, chọn checkpoint theo validation AUROC và lưu history, config, môi trường, checkpoint cùng metrics vào `/kaggle/working/phase3_outputs/`. Đã nâng minimum Transformers lên 4.56.1 để hỗ trợ DINOv3.
+
+**Thứ tự notebook:** `00_dataset_audit.ipynb` → `01_global_baseline.ipynb` (Phase 3) → `02_dinov3_feature_extraction.ipynb` (Phase 4, cache dùng lại) → `03_local_experiment.ipynb` (Phase 5).
+
+**Chưa có baseline metrics:** cần chạy notebook trên Kaggle GPU, mount dataset Who Is AI, dùng phiên bản mới nhất của repo và cung cấp Hugging Face Secret sau khi tài khoản được cấp quyền truy cập checkpoint. Kết quả chỉ là in-domain validation vì Phase 2 chưa có held-out source.
 
 **Việc làm**
 
@@ -85,6 +105,8 @@ Nếu không tìm được source/generator cho các ảnh train, ghi nhận rõ
 
 ## Phase 4 — Trích xuất và cache DINOv3 features
 
+Notebook dùng cho phase này là `notebooks/02_dinov3_feature_extraction.ipynb`. Chạy sau khi đã có baseline Phase 3; mục tiêu là trích một lần và lưu cache để Phase 5 không phải chạy backbone lặp lại.
+
 **Việc làm**
 
 1. Dùng backbone Frozen để trích xuất một lần cho toàn bộ ảnh thuộc train/validation/test đã định danh.
@@ -95,7 +117,7 @@ Nếu không tìm được source/generator cho các ảnh train, ghi nhận rõ
 **Đầu ra**
 
 - `global_features.pt`, `patch_features.pt`, `labels.pt`, `metadata.csv` (hoặc định dạng tương đương) trong thư mục artifact bị ignore bởi Git.
-- Notebook `01_dinov3_feature_extraction.ipynb` gọi lại code từ `src/`, không chứa implementation trùng lặp.
+- Notebook `02_dinov3_feature_extraction.ipynb` gọi lại code từ `src/`, không chứa implementation trùng lặp.
 
 ## Phase 5 — Thí nghiệm Local tối thiểu
 

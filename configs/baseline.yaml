@@ -4,14 +4,12 @@ experiment:
   output_dir: outputs/baseline
 
 data:
-  root: data
-  manifest: null  # Set to a CSV/Parquet manifest after dataset audit.
+  train_manifest: outputs/splits/train.csv
+  validation_manifest: outputs/splits/val.csv
+  image_path_base: .
   image_column: image_path
   label_column: label
   source_column: source
-  train_sources: []
-  validation_sources: []
-  test_sources: []  # Keep these sources out of training and model selection.
   image_size: 224
   batch_size: 32
   num_workers: 4
@@ -20,6 +18,7 @@ model:
   backbone: facebook/dinov3-vitb16-pretrain-lvd1689m
   pretrained: true
   freeze_backbone: true
+  revision: null
   feature: cls
   classifier: linear
   hidden_dim: 256
@@ -32,6 +31,7 @@ training:
   weight_decay: 0.0001
   device: auto
   mixed_precision: true
+  pin_memory: true
 
 evaluation:
   threshold: 0.5
