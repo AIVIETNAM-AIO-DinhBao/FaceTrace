@@ -1,0 +1,38 @@
+experiment:
+  name: dinov3_global_baseline
+  seed: 42
+  output_dir: outputs/baseline
+
+data:
+  root: data
+  manifest: null  # Set to a CSV/Parquet manifest after dataset audit.
+  image_column: image_path
+  label_column: label
+  source_column: source
+  train_sources: []
+  validation_sources: []
+  test_sources: []  # Keep these sources out of training and model selection.
+  image_size: 224
+  batch_size: 32
+  num_workers: 4
+
+model:
+  backbone: facebook/dinov3-vitb16-pretrain-lvd1689m
+  pretrained: true
+  freeze_backbone: true
+  feature: cls
+  classifier: linear
+  hidden_dim: 256
+  dropout: 0.0
+  num_classes: 2
+
+training:
+  epochs: 20
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  device: auto
+  mixed_precision: true
+
+evaluation:
+  threshold: 0.5
+  metrics: [auroc, balanced_accuracy, accuracy, f1]

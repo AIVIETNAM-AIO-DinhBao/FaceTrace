@@ -1,0 +1,40 @@
+experiment:
+  name: dinov3_global_local
+  seed: 42
+  output_dir: outputs/local
+
+data:
+  root: data
+  manifest: null
+  image_column: image_path
+  label_column: label
+  source_column: source
+  train_sources: []
+  validation_sources: []
+  test_sources: []
+  image_size: 224
+  batch_size: 32
+  num_workers: 4
+
+model:
+  backbone: facebook/dinov3-vitb16-pretrain-lvd1689m
+  pretrained: true
+  freeze_backbone: true
+  global_feature: cls
+  local_feature: patch_mean
+  local_pooling: mean
+  classifier: linear
+  hidden_dim: 256
+  dropout: 0.0
+  num_classes: 2
+
+training:
+  epochs: 20
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  device: auto
+  mixed_precision: true
+
+evaluation:
+  threshold: 0.5
+  metrics: [auroc, balanced_accuracy, accuracy, f1]
