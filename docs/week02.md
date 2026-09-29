@@ -146,6 +146,8 @@ Trong validation này, Local-only cao hơn Global-only (+0.022525 AUROC, +0.0425
 
 Rà soát code thấy Phase 3 đánh giá backbone bằng float32, còn Phase 4 trích bằng AMP và lưu float16; Phase 5 chuyển cache sang float32 cho classifier. Notebook 04 đo ảnh hưởng precision bằng cách giữ nguyên từng checkpoint và đổi giữa cache, clean AMP và clean float32. Hai run cũng huấn luyện/chọn checkpoint riêng, nên chưa thể quy toàn bộ chênh lệch metrics cho precision.
 
+**Đối chiếu đã chạy ở Phase 6:** cùng head Phase 5, đổi precision chỉ tăng AUROC 0.000025–0.000050, BAcc/Accuracy/F1 giữ nguyên. Head MLP Phase 3 trên cache đạt AUROC 0.932225, BAcc 0.8700; trên clean float32 đạt 0.932275/0.8700, tái hiện kết quả gốc. Vì vậy precision ở bước đánh giá không giải thích được chênh lệch BAcc 0.8700 → 0.8400 giữa hai head. Nguyên nhân cụ thể ở quá trình huấn luyện/chọn checkpoint chưa được tách riêng; so sánh representation chính vẫn dùng ba head cùng pipeline Phase 5.
+
 **Việc làm**
 
 1. Chọn trước một cách gộp patch đơn giản, ưu tiên mean pooling trong lần so sánh chính.
@@ -163,7 +165,7 @@ Rà soát code thấy Phase 3 đánh giá backbone bằng float32, còn Phase 4 
 
 ## Phase 6 — Phân tích lỗi và robustness sanity check
 
-**Trạng thái: đã triển khai, chờ chạy Kaggle GPU và xem output.** Entry point là `notebooks/04_error_robustness.ipynb`, gọi module `src/evaluation/phase6.py`. Không chạy DINOv3 trên local.
+**Trạng thái: hoàn tất phân tích in-domain (2026-09-29).** `notebooks/04_error_robustness.ipynb` chạy hết 11 code cells trên Kaggle Tesla T4, PyTorch 2.10.0+cu128, không có error output. Đã attach cả artifact Phase 3, xem sáu montage và đối chiếu metrics. Các nhận xét review được ghi dưới đây; trong run gốc `OBSERVATION_NOTES` còn trống nên JSON artifact vẫn ghi trạng thái chờ visual review.
 
 **Input và cách chạy**
 
@@ -190,11 +192,40 @@ Rà soát code thấy Phase 3 đánh giá backbone bằng float32, còn Phase 4 
 - `robustness_predictions.csv`: 4.800 hàng = 400 ảnh × 3 nhánh × 4 điều kiện; `robustness_metrics.csv`: metrics và delta so với clean.
 - `week02_summary.json` và bảng tổng hợp hiển thị cuối notebook; ZIP `/kaggle/working/phase6_analysis_artifacts.zip`.
 
-**Điều kiện hoàn tất:** notebook chạy hết và tái hiện checkpoint Phase 5; đủ prediction/metrics cho mọi nhánh/condition; xem montage và ghi nhận xét; diễn giải precision/robustness cùng giới hạn in-domain. Chưa có kết quả GPU để xác nhận các điều kiện này.
+**Kiểm tra đã qua:** cả ba checkpoint tái hiện metrics Phase 5, sai lệch probability tối đa khoảng `2.97e-8`. Bảng cache so với clean AMP báo mean/max absolute difference `0.000000`, cosine `1.000000` ở cả global/local. Cell cuối kiểm tra đủ 4.800 prediction rows và đúng thứ tự ID/nhãn trong từng condition/representation trước khi tạo ZIP.
+
+### Phân tích lỗi trên clean validation
+
+| So với Global-only | Cả hai đúng | Cả hai sai | Global sai, nhánh so sánh đúng | Global đúng, nhánh so sánh sai | Số ảnh đúng tăng ròng |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Global + Local | 327 | 42 | 22 | 9 | +13 |
+| Local-only | 316 | 27 | 37 | 20 | +17 |
+
+Global-only sai 64/400 ảnh; Local-only sai 47/400; fusion sai 51/400. Local-only sửa được nhiều lỗi của Global hơn fusion, đồng thời cũng mất 20 trường hợp Global đã đúng. Các nhánh có nhóm lỗi khác nhau; concat trong lần chạy này chưa vượt Local-only.
+
+**Nhận xét từ montage seed 42:** ảnh màu và gần grayscale đều xuất hiện trong các nhóm sai/bất đồng; có nhiều kiểu crop, background, ánh sáng và kính. Chưa thấy một pattern đủ rõ để quy lỗi chung cho riêng mắt, tóc hay da. Một số lỗi có confidence cao: `train/00592.jpg` có nhãn Fake nhưng Global/Local cho probability Fake 0.001/0.016; `train/00819.jpg` có nhãn Real, Global đúng với probability Fake 0.219 nhưng fusion sai với 0.890. Đây là ví dụ quan sát, chưa phải phân tích toàn bộ nhóm hoặc attribution vùng ảnh. Tỷ lệ lỗi theo nhóm màu/crop chưa được tính trong notebook 04.
+
+### Robustness với checkpoint và threshold cố định
+
+Mỗi ô là **AUROC / Balanced Accuracy**, cùng 400 ảnh và threshold 0.5:
+
+| Điều kiện | Global-only | Local-only | Global + Local |
+| --- | ---: | ---: | ---: |
+| Clean | 0.930025 / 0.8400 | 0.952550 / 0.8825 | 0.945550 / 0.8725 |
+| JPEG q70 | 0.928600 / 0.8300 | 0.950525 / 0.8825 | 0.944700 / 0.8825 |
+| Resize 112→224 | 0.903000 / 0.8100 | 0.925675 / 0.8300 | 0.918025 / 0.8400 |
+| Blur radius 1.0 | 0.927700 / 0.8450 | 0.948275 / 0.8800 | 0.943550 / 0.8725 |
+
+- Resize gây giảm lớn nhất: AUROC giảm khoảng 0.027 ở cả ba nhánh. BAcc Local-only giảm 0.0525 (5.25 điểm phần trăm, 21 ảnh đúng ít hơn), Global giảm 0.0300 và fusion giảm 0.0325. Fusion có BAcc cao hơn Local-only trong điều kiện này dù AUROC thấp hơn.
+- JPEG q70 và blur radius 1.0 gây giảm AUROC nhỏ ở mức đã thử. BAcc có thể giữ nguyên hoặc tăng nhẹ: fusion tăng 0.0100 khi JPEG, Global tăng 0.0050 khi blur. Đây là thay đổi quyết định ở threshold cố định trên tập này; chưa chứng minh corruption làm model tốt hơn.
+- Local-only giữ AUROC cao nhất ở cả bốn điều kiện, nhưng mức giảm so với clean không luôn nhỏ nhất. Kết quả chưa đủ để kết luận Local bền vững hơn với mọi dạng corruption hoặc source mới.
+- Đối chiếu float32 giữ nguyên BAcc/Accuracy/F1 cho cả ba head Phase 5; AUROC Global/Local/fusion lần lượt là 0.930075/0.952575/0.945575. Diagnostic baseline cũ và giới hạn nguyên nhân chênh lệch đã được ghi ở Phase 5.
+
+**Điều kiện hoàn tất đã đáp ứng ở phạm vi in-domain:** run thành công, checkpoint/cache đã đối chiếu, đủ metrics/predictions, montage đã review và có diễn giải precision/robustness. JSON nhận xét của artifact gốc còn trống; báo cáo review chính là doc này. Không có unseen-source evaluation trong run này.
 
 ## Phase 7 — Tổng hợp và quyết định cuối tuần
 
-**Trạng thái: đã chuẩn bị tổng hợp, chờ output Phase 6 và review cuối.** Dùng chính `docs/week02.md` làm báo cáo tuần; notebook 04 hiển thị bảng và xuất `week02_summary.json` để đối chiếu. Cập nhật kết quả đã đo vào doc này sau khi chạy, gồm:
+**Trạng thái: hoàn tất tổng hợp Tuần 2 theo nhánh không có source metadata (2026-09-29).** Báo cáo là chính `docs/week02.md`, đối chiếu với output notebook 00–04. Notebook 04 đã tạo bảng tổng hợp và `week02_summary.json`; nhận xét montage cùng kết luận review cuối nằm trong doc này. Nội dung đã tổng hợp gồm:
 
 - phiên bản dữ liệu, audit và shortcut risks;
 - nguồn/generator đã biết và giới hạn metadata;
@@ -206,7 +237,11 @@ Rà soát code thấy Phase 3 đánh giá backbone bằng float32, còn Phase 4 
 
 **Quy tắc quyết định:** giữ Local cho Tuần 3 nếu có bằng chứng cải thiện rõ trên held-out source và không chỉ tăng in-domain validation. Nếu không có source metadata hoặc unseen-source test hợp lệ, kết luận H1 là **chưa xác định được**, không phải Local không hiệu quả; cần ưu tiên bổ sung metadata/dữ liệu đánh giá.
 
-**Nhận định hiện tại:** Local-only là ứng viên cho thí nghiệm tiếp theo nhờ kết quả validation Phase 5. Chưa xác nhận H1. Ưu tiên Tuần 3 là bổ sung source/generator metadata hoặc dataset có nguồn xác định để đánh giá unseen-source; robustness chỉ là sanity check bổ sung. Báo cáo cuối cần ghi rõ một seed, một split in-domain, checkpoint được chọn và phân tích trên cùng validation, cùng việc concat tăng số tham số classifier.
+**Kết luận tuần:** Local-only là ứng viên cho thí nghiệm tiếp theo: cao nhất về AUROC trên clean và ba corruption đã thử, sửa ròng 17 lỗi so với Global. Fusion cải thiện so với Global nhưng chưa vượt Local-only về AUROC; ở resize, fusion có BAcc cao hơn. H1 về unseen-source generalization vẫn **chưa xác định được**.
+
+**Giới hạn của báo cáo:** một seed và một split in-domain; checkpoint được chọn và phân tích trên cùng validation; concat tăng input MLP từ 768 lên 1536 nên tăng số tham số; chỉ ba mức corruption cố định; chưa có đánh giá theo source hoặc kiểm định nhiều run. Precision khi đánh giá đã được đối chiếu, nhưng ảnh hưởng của khác biệt quá trình huấn luyện/chọn head chưa được cô lập. Audit có 500/1.000 ảnh gần grayscale ở mỗi lớp; file size, contrast và edge statistics khác nhau vẫn là shortcut tiềm năng, chưa có thí nghiệm kiểm soát để xác định ảnh hưởng.
+
+**Ưu tiên Tuần 3:** bổ sung source/generator metadata hoặc dataset có nguồn xác định, khóa unseen-source split rồi đánh giá Global/Local/fusion trong cùng pipeline. Local-only được giữ làm ứng viên; quyết định về generalization chờ bằng chứng từ nguồn chưa thấy. Robustness hiện tại là sanity check bổ sung cho kết quả in-domain.
 
 ## Thứ tự ưu tiên khi thiếu thời gian hoặc GPU
 
