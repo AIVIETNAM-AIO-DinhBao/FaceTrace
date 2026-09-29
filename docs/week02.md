@@ -92,7 +92,7 @@ Kết quả validation in-domain:
 
 Head được chọn là B1 MLP theo validation AUROC, sau đó mới xét Balanced Accuracy khi hòa điểm. Đây là baseline in-domain; chưa có test unseen-source và không được dùng để claim H1 về generalization. Run có một số cảnh báo dọn DataLoader worker và cảnh báo API AMP deprecated, nhưng không làm gián đoạn việc huấn luyện hay tạo metrics/checkpoint.
 
-**Thứ tự notebook:** `00_dataset_audit.ipynb` → `01_global_baseline.ipynb` (Phase 3) → `02_dinov3_feature_extraction.ipynb` (Phase 4, cache dùng lại) → `03_local_experiment.ipynb` (Phase 5).
+**Thứ tự notebook:** `00_dataset_audit.ipynb` → `01_global_baseline.ipynb` (Phase 3) → `02_dinov3_feature_extraction.ipynb` (Phase 4, cache dùng lại) → `03_local_experiment.ipynb` (Phase 5) → `04_error_robustness.ipynb` (Phase 6 và tổng hợp định lượng Phase 7). Mỗi notebook chạy trong một kernel Kaggle độc lập.
 
 Kết quả chỉ là in-domain validation vì Phase 2 chưa có held-out source.
 
@@ -116,6 +116,8 @@ Kết quả chỉ là in-domain validation vì Phase 2 chưa có held-out source
 
 Notebook dùng cho phase này là `notebooks/02_dinov3_feature_extraction.ipynb`. Đây là notebook Kaggle độc lập: mỗi lần mở kernel mới, notebook tự cài dependency, clone repo, tìm dataset, xác thực Hugging Face, tái tạo split và load DINOv3; nó không dùng state từ notebook 01. Chạy sau khi đã có baseline Phase 3; mục tiêu là trích một lần và lưu cache để Phase 5 không phải chạy backbone lặp lại.
 
+**Trạng thái: hoàn tất.** Notebook 02 đã trích global `(2000, 768)` và patch `(2000, 196, 768)` bằng AMP rồi lưu float16; patch không chứa CLS/register tokens. Model revision là `5931719e67bbdb9737e363e781fb0c67687896bc`. Notebook 03 đã nạp lại cache trong kernel mới và xác nhận thứ tự ID/nhãn khớp split manifests trước khi huấn luyện. ZIP cache: `/kaggle/working/phase4_dinov3_feature_cache.zip`.
+
 **Việc làm**
 
 1. Dùng backbone Frozen để trích xuất một lần cho toàn bộ ảnh thuộc train/validation/test đã định danh.
@@ -131,6 +133,18 @@ Notebook dùng cho phase này là `notebooks/02_dinov3_feature_extraction.ipynb`
 ## Phase 5 — Thí nghiệm Local tối thiểu
 
 Notebook `notebooks/03_local_experiment.ipynb` đã được chuẩn bị như một Kaggle workflow độc lập cho kernel mới. Notebook nhận cache Phase 4, kiểm tra lại thứ tự `image_id` với split manifests rồi chạy cùng MLP protocol của Phase 3 cho Global-only, Local-only và Global + Local. Local dùng mean pooling trên patch tokens; Global + Local dùng phép nối hai vector, không chuẩn hóa branch trong lần so sánh đầu tiên. Kết quả và prediction validation được lưu vào `/kaggle/working/phase5_local_outputs/`.
+
+**Trạng thái: hoàn tất so sánh in-domain (2026-09-29).** Cả ba nhánh đã chạy đủ 20 epoch và tạo checkpoint, history, validation predictions, metrics và ZIP artifact tại `/kaggle/working/phase5_local_experiment_artifacts.zip`. Nhánh được chọn theo validation AUROC là Local-only ở epoch 7.
+
+| Representation | Best epoch | Val AUROC | Val Balanced Accuracy | Val Accuracy | Val F1 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Global-only | 7 | 0.930025 | 0.8400 | 0.8400 | 0.842365 |
+| Local-only (mean patch) | 7 | **0.952550** | **0.8825** | **0.8825** | **0.885645** |
+| Global + Local (concat) | 14 | 0.945550 | 0.8725 | 0.8725 | 0.873449 |
+
+Trong validation này, Local-only cao hơn Global-only (+0.022525 AUROC, +0.0425 Balanced Accuracy). Global + Local cũng cao hơn Global-only nhưng thấp hơn Local-only. Đây chưa phải bằng chứng H1 vì split không có held-out source/generator. Global-only của Phase 5 (AUROC 0.930025, BAcc 0.8400) cũng thấp hơn kết quả Global + MLP của Phase 3 (AUROC 0.932275, BAcc 0.8700).
+
+Rà soát code thấy Phase 3 đánh giá backbone bằng float32, còn Phase 4 trích bằng AMP và lưu float16; Phase 5 chuyển cache sang float32 cho classifier. Notebook 04 đo ảnh hưởng precision bằng cách giữ nguyên từng checkpoint và đổi giữa cache, clean AMP và clean float32. Hai run cũng huấn luyện/chọn checkpoint riêng, nên chưa thể quy toàn bộ chênh lệch metrics cho precision.
 
 **Việc làm**
 
@@ -149,30 +163,50 @@ Notebook `notebooks/03_local_experiment.ipynb` đã được chuẩn bị như m
 
 ## Phase 6 — Phân tích lỗi và robustness sanity check
 
+**Trạng thái: đã triển khai, chờ chạy Kaggle GPU và xem output.** Entry point là `notebooks/04_error_robustness.ipynb`, gọi module `src/evaluation/phase6.py`. Không chạy DINOv3 trên local.
+
+**Input và cách chạy**
+
+- Push source mới lên `main` hoặc attach snapshot repo có module Phase 6 trước khi chạy notebook.
+- Kernel mới: bật GPU/Internet, cấp Kaggle Secret `HF_TOKEN`; attach dataset Who Is AI gốc, cache/ZIP Phase 4 và artifact/ZIP Phase 5.
+- Nên attach thêm artifact/ZIP Phase 3 để đánh giá lại checkpoint MLP cũ. Nếu thiếu, diagnostic ghi rõ chưa đối chiếu được baseline cũ.
+- Notebook tự tìm thư mục hoặc ZIP; khi có nhiều bản artifact, chọn rõ `PHASE4_ROOT`, `PHASE5_ROOT`, `PHASE3_ROOT`. Đường dẫn ảnh được dựng lại từ `original_path` và dataset hiện tại, không phụ thuộc mount của kernel trước.
+
 **Việc làm**
 
-1. Xuất dự đoán theo ID ảnh cho Global-only và Global + Local.
-2. Xem các nhóm Global sai/Global + Local đúng và Global đúng/Global + Local sai; lưu confidence, nhãn và source nếu có. Quan sát vùng mắt, tóc, da, biên mặt và texture như gợi ý phân tích, không diễn giải vượt quá bằng chứng.
-3. Trên validation (hoặc test chỉ để báo cáo cuối sau khi protocol đã khóa), chạy sanity check nhỏ cho JPEG compression, resize và blur nhẹ với Global và Global + Local.
-4. Không dùng robustness sanity check để tinh chỉnh trên test.
+1. Xác nhận ID/nhãn/thứ tự cache; load ba checkpoint Phase 5 và tái hiện probabilities/metrics đã lưu trước khi phân tích.
+2. Xuất dự đoán và nhóm lỗi Global-only so với Global + Local, đồng thời so với Local-only vì nhánh này đang tốt nhất in-domain. Giữ confidence, nhãn, source và nhóm cả hai cùng sai; montage lấy tối đa 8 ảnh/nhóm bằng seed 42. Ghi nhận xét sau khi xem ảnh vào `OBSERVATION_NOTES` trong notebook. Vùng mắt, tóc, da, biên mặt và texture chỉ là gợi ý quan sát, không phải bằng chứng vùng model chú ý.
+3. Trích lại clean validation bằng đúng model revision/processor đã lưu với AMP float16 và float32; đối chiếu feature/metrics với cache bằng cùng checkpoint. Nếu có artifact Phase 3, đánh giá thêm MLP cũ trên cache và clean float32 để đối chiếu kết quả gốc.
+4. Chạy cả ba nhánh trên cùng 400 ảnh validation, giữ checkpoint/threshold `0.5`, dùng clean AMP làm mốc và ba corruption cố định:
+   - JPEG encode/decode: quality `70`, subsampling `2`;
+   - resize bilinear: giảm xuống `112×112`, tăng lên `224×224`;
+   - Gaussian blur: radius `1.0` pixel trên ảnh gốc.
+   Mỗi corruption áp dụng riêng lên ảnh RGB gốc sau EXIF transpose, trước processor; không ghép các corruption. Feature tính theo AMP/float16 rồi chuyển float32 cho classifier như Phase 5.
+5. Lưu AUROC/BAcc/Accuracy/F1 và delta so với clean cho từng nhánh/condition; delta âm là giảm metric. Không chọn lại checkpoint, threshold hoặc mức corruption theo kết quả.
 
 **Đầu ra**
 
-- File dự đoán/error cases và ghi chú phân tích.
-- Bảng robustness nhỏ với phép biến đổi và mức độ được ghi rõ.
+- Thư mục `/kaggle/working/phase6_outputs/dinov3_seed42/`: prediction/error CSV, montage PNG, kiểm tra precision, bảng robustness, biểu đồ và môi trường/protocol kèm hash input.
+- `robustness_predictions.csv`: 4.800 hàng = 400 ảnh × 3 nhánh × 4 điều kiện; `robustness_metrics.csv`: metrics và delta so với clean.
+- `week02_summary.json` và bảng tổng hợp hiển thị cuối notebook; ZIP `/kaggle/working/phase6_analysis_artifacts.zip`.
+
+**Điều kiện hoàn tất:** notebook chạy hết và tái hiện checkpoint Phase 5; đủ prediction/metrics cho mọi nhánh/condition; xem montage và ghi nhận xét; diễn giải precision/robustness cùng giới hạn in-domain. Chưa có kết quả GPU để xác nhận các điều kiện này.
 
 ## Phase 7 — Tổng hợp và quyết định cuối tuần
 
-Tạo `WEEK02_Experiment_Results.md` hoặc notebook báo cáo gồm:
+**Trạng thái: đã chuẩn bị tổng hợp, chờ output Phase 6 và review cuối.** Dùng chính `docs/week02.md` làm báo cáo tuần; notebook 04 hiển thị bảng và xuất `week02_summary.json` để đối chiếu. Cập nhật kết quả đã đo vào doc này sau khi chạy, gồm:
 
 - phiên bản dữ liệu, audit và shortcut risks;
 - nguồn/generator đã biết và giới hạn metadata;
 - định nghĩa split, seed, model/preprocessing và cấu hình;
 - bảng Global-only, Local-only, Global + Local với Val AUROC/BAcc và Unseen AUROC/BAcc (nếu hợp lệ);
 - phân tích lỗi và robustness sanity check;
+- đối chiếu precision/cache và chênh lệch baseline Phase 3/5, phân biệt kết quả đo với nguyên nhân chưa xác định;
 - kết luận H1 cùng hạn chế.
 
 **Quy tắc quyết định:** giữ Local cho Tuần 3 nếu có bằng chứng cải thiện rõ trên held-out source và không chỉ tăng in-domain validation. Nếu không có source metadata hoặc unseen-source test hợp lệ, kết luận H1 là **chưa xác định được**, không phải Local không hiệu quả; cần ưu tiên bổ sung metadata/dữ liệu đánh giá.
+
+**Nhận định hiện tại:** Local-only là ứng viên cho thí nghiệm tiếp theo nhờ kết quả validation Phase 5. Chưa xác nhận H1. Ưu tiên Tuần 3 là bổ sung source/generator metadata hoặc dataset có nguồn xác định để đánh giá unseen-source; robustness chỉ là sanity check bổ sung. Báo cáo cuối cần ghi rõ một seed, một split in-domain, checkpoint được chọn và phân tích trên cùng validation, cùng việc concat tăng số tham số classifier.
 
 ## Thứ tự ưu tiên khi thiếu thời gian hoặc GPU
 
