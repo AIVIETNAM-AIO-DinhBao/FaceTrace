@@ -81,11 +81,20 @@ Không tạo `test_unseen.csv`; public/private test không nhãn vẫn bị lo�
 
 ## Phase 3 — Hoàn thiện pipeline và baseline Global
 
-**Tiến độ (2026-09-28):** Đã nối dataset từ manifest, Frozen DINOv3 global/CLS feature, classifier và validation evaluator trong `src/`. Notebook `notebooks/01_global_baseline.ipynb` là workflow chạy B0 linear và B1 MLP trên Kaggle GPU; notebook tái tạo đúng split Phase 2 từ dataset được mount, trích feature trong lúc chạy baseline, chọn checkpoint theo validation AUROC và lưu history, config, môi trường, checkpoint cùng metrics vào `/kaggle/working/phase3_outputs/`. Đã nâng minimum Transformers lên 4.56.1 để hỗ trợ DINOv3.
+**Trạng thái (2026-09-29): hoàn tất baseline Phase 3.** Đã nối dataset từ manifest, Frozen DINOv3 global/CLS feature, classifier và validation evaluator trong `src/`. Notebook `notebooks/01_global_baseline.ipynb` đã chạy thành công trên Kaggle GPU với split Phase 2, trích feature trong lúc chạy baseline, lưu history/config/môi trường/checkpoint/metrics và đóng gói artifact vào `/kaggle/working/phase3_baseline_artifacts.zip`. Đã nâng minimum Transformers lên 4.56.1 để hỗ trợ DINOv3.
+
+Kết quả validation in-domain:
+
+| Head | Best epoch | Val AUROC | Val Balanced Accuracy | Val Accuracy | Val F1 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Global + Linear (B0) | 18 | 0.926725 | 0.865 | 0.865 | 0.860104 |
+| Global + MLP (B1) | 3 | **0.932275** | **0.870** | **0.870** | 0.857143 |
+
+Head được chọn là B1 MLP theo validation AUROC, sau đó mới xét Balanced Accuracy khi hòa điểm. Đây là baseline in-domain; chưa có test unseen-source và không được dùng để claim H1 về generalization. Run có một số cảnh báo dọn DataLoader worker và cảnh báo API AMP deprecated, nhưng không làm gián đoạn việc huấn luyện hay tạo metrics/checkpoint.
 
 **Thứ tự notebook:** `00_dataset_audit.ipynb` → `01_global_baseline.ipynb` (Phase 3) → `02_dinov3_feature_extraction.ipynb` (Phase 4, cache dùng lại) → `03_local_experiment.ipynb` (Phase 5).
 
-**Chưa có baseline metrics:** cần chạy notebook trên Kaggle GPU, mount dataset Who Is AI, dùng phiên bản mới nhất của repo và cung cấp Hugging Face Secret sau khi tài khoản được cấp quyền truy cập checkpoint. Kết quả chỉ là in-domain validation vì Phase 2 chưa có held-out source.
+Kết quả chỉ là in-domain validation vì Phase 2 chưa có held-out source.
 
 **Việc làm**
 
@@ -105,7 +114,7 @@ Không tạo `test_unseen.csv`; public/private test không nhãn vẫn bị lo�
 
 ## Phase 4 — Trích xuất và cache DINOv3 features
 
-Notebook dùng cho phase này là `notebooks/02_dinov3_feature_extraction.ipynb`. Chạy sau khi đã có baseline Phase 3; mục tiêu là trích một lần và lưu cache để Phase 5 không phải chạy backbone lặp lại.
+Notebook dùng cho phase này là `notebooks/02_dinov3_feature_extraction.ipynb`. Đây là notebook Kaggle độc lập: mỗi lần mở kernel mới, notebook tự cài dependency, clone repo, tìm dataset, xác thực Hugging Face, tái tạo split và load DINOv3; nó không dùng state từ notebook 01. Chạy sau khi đã có baseline Phase 3; mục tiêu là trích một lần và lưu cache để Phase 5 không phải chạy backbone lặp lại.
 
 **Việc làm**
 
@@ -116,10 +125,12 @@ Notebook dùng cho phase này là `notebooks/02_dinov3_feature_extraction.ipynb`
 
 **Đầu ra**
 
-- `global_features.pt`, `patch_features.pt`, `labels.pt`, `metadata.csv` (hoặc định dạng tương đương) trong thư mục artifact bị ignore bởi Git.
+- `global_features.pt`, `patch_features.pt`, `labels.pt`, `metadata.csv`, `cache_manifest.json` và split manifests trong thư mục artifact bị ignore bởi Git; notebook cũng tạo ZIP để tải từ Kaggle.
 - Notebook `02_dinov3_feature_extraction.ipynb` gọi lại code từ `src/`, không chứa implementation trùng lặp.
 
 ## Phase 5 — Thí nghiệm Local tối thiểu
+
+Notebook `notebooks/03_local_experiment.ipynb` đã được chuẩn bị như một Kaggle workflow độc lập cho kernel mới. Notebook nhận cache Phase 4, kiểm tra lại thứ tự `image_id` với split manifests rồi chạy cùng MLP protocol của Phase 3 cho Global-only, Local-only và Global + Local. Local dùng mean pooling trên patch tokens; Global + Local dùng phép nối hai vector, không chuẩn hóa branch trong lần so sánh đầu tiên. Kết quả và prediction validation được lưu vào `/kaggle/working/phase5_local_outputs/`.
 
 **Việc làm**
 

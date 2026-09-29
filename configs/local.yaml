@@ -23,7 +23,9 @@ model:
   global_feature: cls
   local_feature: patch_mean
   local_pooling: mean
-  classifier: linear
+  fusion: concat
+  normalize_branches: false
+  classifier: mlp
   hidden_dim: 256
   dropout: 0.0
   num_classes: 2

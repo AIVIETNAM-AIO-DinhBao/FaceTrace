@@ -42,10 +42,13 @@ class ManifestImageDataset(Dataset):
         with Image.open(image_path) as image:
             rgb = ImageOps.exif_transpose(image).convert("RGB")
             pixel_values = self.processor(images=rgb, return_tensors="pt")["pixel_values"][0]
+        source_value = row.get("source", "")
+        if pd.isna(source_value):
+            source_value = ""
         return {
             "pixel_values": pixel_values,
             "label": torch.tensor(int(row[self.label_column]), dtype=torch.long),
             "image_id": str(row["image_id"]),
             "image_path": str(image_path),
-            "source": str(row.get("source", "") or ""),
+            "source": str(source_value or ""),
         }
