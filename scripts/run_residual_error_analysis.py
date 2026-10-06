@@ -29,6 +29,8 @@ def main() -> None:
         "local": root / "local_only.csv",
         "residual": root / "residual.csv",
         "local_residual": root / "evaluation/LR_mean.csv",
+        "global_local": root / "evaluation/GL_mean.csv",
+        "global_local_residual": root / "evaluation/GLR_mean.csv",
     }
     result = run_error_analysis(
         prediction_paths=prediction_paths,

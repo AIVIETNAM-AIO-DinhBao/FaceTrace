@@ -86,6 +86,7 @@ Artifact chính nằm trong
 | Global → Residual | 35 | 98 | -63 | 0.930025 | 0.798700 |
 | Local → Residual | 24 | 104 | -80 | 0.952550 | 0.798700 |
 | Local-only → Local + Residual | 9 | 5 | **+4** | 0.952550 | 0.953300 |
+| Global + Local → Global + Local + Residual | 5 | 5 | 0 | 0.951350 | 0.954225 |
 
 Định nghĩa: `rescue` là baseline sai nhưng candidate đúng; `harm` là baseline
 đúng nhưng candidate sai. Kết quả cho thấy residual-only chưa phải nhánh thay
@@ -93,6 +94,10 @@ thế cho Global/Local, nhưng khi fusion với Local thì có bổ sung nhỏ t
 in-domain này. Các group đầy đủ (`both_correct`, `rescue`, `harm`, `both_wrong`)
 được lưu trong `error_rescue_harm.csv`; từng image và xác suất được lưu trong
 `error_cases.csv`; montage kiểm tra định tính nằm trong `montages/`.
+
+Comparison cuối cho thấy thêm Residual vào fusion Global + Local cải thiện AUROC
+nhưng không đổi Balanced Accuracy tại threshold `0.5`: có 5 rescue và 5 harm,
+nên net gain bằng `0`.
 
 ## Giới Hạn Diễn Giải
 

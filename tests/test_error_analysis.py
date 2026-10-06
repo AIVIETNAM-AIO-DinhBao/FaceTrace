@@ -78,6 +78,8 @@ class ErrorAnalysisTests(unittest.TestCase):
                 "local": [0.1, 0.8, 0.2, 0.9],
                 "residual": [0.1, 0.8, 0.2, 0.1],
                 "local_residual": [0.1, 0.8, 0.8, 0.9],
+                "global_local": [0.1, 0.5, 0.5, 0.9],
+                "global_local_residual": [0.1, 0.8, 0.2, 0.9],
             }
             for name, probabilities in predictions.items():
                 path = root / f"{name}.csv"
@@ -86,9 +88,10 @@ class ErrorAnalysisTests(unittest.TestCase):
 
             output = root / "analysis"
             result = run_error_analysis(paths, manifest, root, output, max_per_group=2)
-            self.assertEqual(result["n_cases"], 12)
+            self.assertEqual(result["n_cases"], 16)
             groups = pd.read_csv(output / "error_rescue_harm.csv")
             self.assertEqual(groups.groupby("comparison")["n_images"].sum().to_dict(), {
+                "global_local_residual_vs_global_local": 4,
                 "local_residual_vs_local": 4,
                 "residual_vs_global": 4,
                 "residual_vs_local": 4,

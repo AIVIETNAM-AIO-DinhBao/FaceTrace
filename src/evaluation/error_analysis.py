@@ -183,11 +183,23 @@ def run_error_analysis(
     montage_dir = output / "montages"
     montage_dir.mkdir(parents=True, exist_ok=True)
     loaded = {name: load_prediction(path, name) for name, path in prediction_paths.items()}
-    expected = {"global", "local", "residual", "local_residual"}
+    expected = {
+        "global",
+        "local",
+        "residual",
+        "local_residual",
+        "global_local",
+        "global_local_residual",
+    }
     missing = expected - set(loaded)
     if missing:
         raise ValueError(f"Missing prediction branches: {sorted(missing)}")
-    comparisons = [("global", "residual"), ("local", "residual"), ("local", "local_residual")]
+    comparisons = [
+        ("global", "residual"),
+        ("local", "residual"),
+        ("local", "local_residual"),
+        ("global_local", "global_local_residual"),
+    ]
     image_paths = _resolve_images(Path(validation_manifest), Path(image_path_base).resolve())
     expected_ids = set(image_paths)
     for name, frame in loaded.items():
