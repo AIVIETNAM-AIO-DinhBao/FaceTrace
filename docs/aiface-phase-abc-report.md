@@ -255,7 +255,7 @@ python scripts/smoke_test_aiface_dinov3.py --device auto --batch-size 2
 ## 8. Việc còn lại sau Phase A–C
 
 1. Chốt version preprocessing, checkpoint policy và threshold policy.
-2. Đóng gói chỉ `aiface_pilot_32k` cùng code pipeline lên Kaggle; không upload outer archive.
+2. Publish package private `nguyentrann0703/aiface-pilot-32k` cùng code pipeline lên Kaggle; không upload outer archive.
 3. Chạy các baseline `Global-only`, `Local-only`, `Forensic-only (Radial FFT + MLP)` và các fusion ablation.
 4. Báo cáo metric theo từng unseen generator và macro-average, kèm limitation identity/real-source.
 

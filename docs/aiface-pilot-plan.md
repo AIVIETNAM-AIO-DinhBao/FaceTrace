@@ -228,5 +228,5 @@ Chỉ chạy DINOv3/forensic pipeline sau khi tất cả điều kiện sau đ�
 - Exact duplicate repair: **hoàn tất**; đã thay 3 ảnh real bị trùng byte và lưu `audit/repair_report.json`.
 - Phase C — Quality gate: **đạt**; `audit/quality_gate.json` ghi 32.000 file RGB đọc được, cân bằng lớp, không duplicate SHA-256 và generator-disjoint. DINOv3 smoke test **đã pass trên MPS** trong env `video-highlight`.
 - Identity audit: **chưa đạt identity-disjointness**; số overlap identity heuristic được lưu trong `audit/quality_gate.json`. Không được gọi split này là identity-disjoint.
-- Phase D — Kaggle package: **chưa chạy**. Chỉ upload subset sau khi nhóm chấp nhận limitation real-source/identity này.
+- Phase D — Kaggle package: **package và audit đã hoàn tất**; KRun dry-run đã pass. Kaggle dataset private `nguyentrann0703/aiface-pilot-32k` đang chờ xác nhận trước khi publish account-level.
 - Phase E — Main pilot: **chưa chạy**.
