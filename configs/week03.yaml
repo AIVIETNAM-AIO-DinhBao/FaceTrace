@@ -1,0 +1,32 @@
+experiment:
+  name: week03_residual
+  seeds: [42]
+  output_dir: outputs/week03
+
+data:
+  train_manifest: outputs/splits/train.csv
+  validation_manifest: outputs/splits/val.csv
+  image_path_base: .
+  image_column: image_path
+  label_column: label
+  image_size: 224
+  batch_size: 32
+  num_workers: 0
+
+model:
+  image_channels: 3
+  num_classes: 2
+  residual_kernel_size: 3
+  residual_gain: 1.0
+
+training:
+  epochs: 20
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  device: auto
+  mixed_precision: true
+  pin_memory: true
+
+evaluation:
+  threshold: 0.5
+  metrics: [auroc, balanced_accuracy, accuracy, f1]

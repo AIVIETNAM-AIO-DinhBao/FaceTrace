@@ -1,6 +1,6 @@
 # Implementation plan Tuần 3: Residual và tính bổ sung giữa các nhánh
 
-Ngày lập: 2026-10-01. Trạng thái: kế hoạch triển khai, chưa viết code hoặc chạy thí nghiệm Tuần 3.
+Ngày lập: 2026-10-01. Trạng thái: core Week 3 đã triển khai và có kết quả; residual multi-seed 43/44 và unseen-source evaluation còn thiếu.
 
 Tài liệu này dùng để giao việc triển khai và chạy notebook trên Kaggle. Các tên file, config và artifact ở phần công việc là đề xuất cần tạo sau; không phải các thành phần đã tồn tại. Giữ nguyên plan/outline cũ để truy vết.
 
@@ -529,7 +529,7 @@ Week 3 chỉ chuẩn bị khả năng nhận dữ liệu mới. Tìm/download ex
 - [ ] R và RGB-control được train, có best/last checkpoints và history.
 - [ ] Clean metrics/predictions đủ G/L/R/C và năm mean fusions.
 - [ ] Có R vs C, LR vs L và LR vs LC; không chỉ so với Global.
-- [ ] Error rescue/harm được tính cho cả branch và fusion.
+- [x] Error rescue/harm được tính cho cả branch và fusion (Notebook 08; seed 42).
 - [ ] Shortcut diagnostic và color/gray subgroup được báo với giới hạn.
 - [ ] Bốn corruption conditions đủ trên cùng validation IDs.
 - [ ] Notebook 05/06 độc lập, artifacts attach/reload được.

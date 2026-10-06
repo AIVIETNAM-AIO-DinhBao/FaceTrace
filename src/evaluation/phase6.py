@@ -175,7 +175,9 @@ def load_classifier(path: Path, input_dim: int, device):
     from src.models.classifier import MLPClassifier
 
     checkpoint = torch.load(path, map_location="cpu", weights_only=True)
-    if checkpoint["classifier_name"] != "mlp" or checkpoint["threshold"] != 0.5 or checkpoint["seed"] != 42:
+    # The frozen MLP protocol is shared across training seeds; seed is recorded
+    # for provenance but must not prevent replay of a valid alternate-seed head.
+    if checkpoint["classifier_name"] != "mlp" or checkpoint["threshold"] != 0.5:
         raise ValueError(f"Checkpoint does not match the frozen MLP protocol: {path}")
     settings = checkpoint.get("classifier_config", checkpoint)
     if (int(settings["hidden_dim"]) != 256 or float(settings["dropout"]) != 0.0
