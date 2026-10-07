@@ -12,7 +12,10 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import json
+from importlib.metadata import version
 from pathlib import Path
+import platform
+import subprocess
 import sys
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -104,6 +107,12 @@ def main():
     forensic_root, baseline_root, output = map(Path, (args.forensic_dir, args.baseline_dir, args.output_dir))
     forensic_metadata = json.loads((forensic_root / "run_metadata.json").read_text())
     baseline_metadata = json.loads((baseline_root / "run_metadata.json").read_text())
+    commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, capture_output=True, text=True)
+    fusion_source = {path.relative_to(REPO_ROOT).as_posix(): sha256_file(path) for path in (
+        Path(__file__), REPO_ROOT / "src/evaluation/spectral.py", REPO_ROOT / "src/evaluation/aiface_phase_e.py",
+        REPO_ROOT / "src/evaluation/metrics.py", REPO_ROOT / "src/training/spectral_trainer.py",
+        REPO_ROOT / "src/models/classifier.py",
+    )}
     if forensic_metadata.get("smoke") or baseline_metadata.get("smoke"):
         raise ValueError("Scientific fusion requires full runs; smoke predictions are not accepted")
     for metadata in (forensic_metadata, baseline_metadata):
@@ -159,9 +168,17 @@ def main():
         (directory / "config_resolved.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False), encoding="utf-8")
         pd.DataFrame(columns=["epoch", "train_loss"]).to_csv(directory / "train_log.csv", index=False)
         torch.save({**cfg, "baseline_dir": str(baseline_root), "forensic_dir": str(forensic_root)}, directory / "checkpoint.pt")
-        write_json(directory / "environment.json", json.loads((forensic_root / "environment.json").read_text()))
+        write_json(directory / "environment.json", {
+            "python": platform.python_version(), "platform": platform.platform(), "device": "cpu", "gpu": None,
+            "packages": {package: version(package) for package in ("torch", "numpy", "pandas", "scikit-learn", "PyYAML")},
+        })
         write_json(directory / "run_metadata.json", {
             **forensic_metadata, "model_name": name, "fusion": cfg, "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+            "device": "cpu", "threshold": thresholds[name],
+            "git_commit": commit.stdout.strip() if commit.returncode == 0 else None,
+            "source_sha256": fusion_source,
+            "forensic_git_commit": forensic_metadata.get("git_commit"),
+            "forensic_run_metadata_sha256": sha256_file(forensic_root / "run_metadata.json"),
             "baseline_dir": str(baseline_root), "forensic_dir": str(forensic_root),
             "baseline_run_metadata_sha256": sha256_file(baseline_root / "run_metadata.json"),
             "baseline_comparison": baseline_name, "baseline_threshold": baseline_threshold,

@@ -81,6 +81,17 @@ Dataset generator-disjoint nhưng chưa identity-disjoint; real chỉ từ imdb_
 
 ## 5. Fusion sau khi nhận baseline
 
+Cách tiện nhất khi đã hoàn thành notebook 11: chạy riêng **`notebooks/12_aiface_phase_e_fusion.ipynb`**.
+
+1. Tạo một dataset **private** chứa ZIP kết quả `facetrace_spectral_artifacts.zip` vừa tải. Có thể để Kaggle giải nén ZIP hoặc giữ ZIP; runner hỗ trợ cả hai layout. Đây là dataset artifact, không phải dataset code hay dataset 32k ảnh.
+2. Import notebook 12 vào một Kaggle notebook mới. Add Input dataset artifact vừa tạo.
+3. Add Input **Output của Saved Version full-run** notebook Global/Local của bạn kia. Nếu không truy cập được Output, nhờ bạn kia ZIP **toàn bộ** `outputs/aiface_phase_e` rồi upload thành dataset private thứ hai và attach. Output cần có `feature_cache.pt` và checkpoint Global/Local, hoặc CSV validation tương ứng; chỉ tải metrics/CSV test thì chưa đủ.
+4. Settings: Internet bật, Accelerator **None / CPU**. Không cần attach dataset ảnh, HF_TOKEN hay train lại.
+5. Giữ `FORENSIC_INPUT=None`, `BASELINE_INPUT=None` để tự tìm artifact trong `/kaggle/input`. Nếu attach nhiều full run, điền đường dẫn chính xác tới directory hoặc ZIP tương ứng, ví dụ `FORENSIC_INPUT='/kaggle/input/<artifact-dataset>/facetrace_spectral_artifacts.zip'`. Cell đầu in các Input thực tế; không dùng đường dẫn `D:/...` trên Kaggle.
+6. Run All. Notebook kiểm tra alignment/protocol, tạo hai fusion, hiển thị bảng so sánh sáu model và rescue/harm. Sau khi kiểm tra, Save Version → Save & Run All rồi tải `facetrace_fusion_artifacts.zip`. Giữ URL saved version và version của cả hai Input.
+
+Notebook 12 chỉ chọn threshold trên validation; không học lại MLP hay tối ưu trọng số fusion trên test. `comparison.csv` và `comparison_by_generator.csv` ở `outputs/aiface_phase_e_fusion/`. Artifact fusion ghi environment CPU hiện tại, checksum source/metadata đầu vào; không dùng environment GPU của lần train forensic làm environment của fusion. Fusion không được đảm bảo cải thiện mọi metric.
+
 Nhờ bạn kia gửi **artifact AI-Face mới, seed 42, cùng version dataset**, không dùng notebook 01–08 / Who Is AI. Cần:
 
 ```text
@@ -89,11 +100,17 @@ feature_cache.pt
 global_only/checkpoint.pt
 global_only/predictions_test.csv
 global_only/val_metrics.json
+global_only/test_metrics_overall.json
+global_only/test_metrics_by_generator.csv
 local_only/checkpoint.pt
 local_only/predictions_test.csv
 local_only/val_metrics.json
+local_only/test_metrics_overall.json
+local_only/test_metrics_by_generator.csv
 global_local/predictions_test.csv
 global_local/val_metrics.json
+global_local/test_metrics_overall.json
+global_local/test_metrics_by_generator.csv
 ```
 
 Nếu có `global_only/predictions_val.csv` và `local_only/predictions_val.csv` thì không cần feature_cache/checkpoint để khôi phục validation prediction. Runner baseline hiện tại không xuất hai CSV validation này, nên hãy yêu cầu toàn bộ artifact có feature cache và checkpoint.

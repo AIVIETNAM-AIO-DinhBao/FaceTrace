@@ -16,7 +16,7 @@ from PIL import Image
 import torch
 import yaml
 
-from src.evaluation.aiface_phase_e import select_threshold
+from src.evaluation.aiface_phase_e import select_threshold, sha256_file
 from src.evaluation.spectral import (
     GENERATOR_SPLITS, align_predictions, find_subset_metadata, save_predictions, select_validation_threshold, validate_pilot, write_json,
 )
@@ -301,11 +301,18 @@ class SpectralTests(unittest.TestCase):
             restored = fusion_module.load_baseline_validation(baseline_root, "global_only", frames["val"])
             np.testing.assert_allclose(restored.probability, predictions["global_only"]["val"])
             fused_root = root / "fused"
-            fusion_command = [sys.executable, str(REPO_ROOT / "scripts/fuse_aiface_spectral.py"),
-                              "--baseline-dir", str(baseline_root), "--forensic-dir", str(output),
+            fusion_command = [sys.executable, str(REPO_ROOT / "scripts/run_aiface_fusion_kaggle.py"),
+                              "--baseline-input", str(baseline_root), "--forensic-input", str(output),
                               "--output-dir", str(fused_root)]
             process = subprocess.run(fusion_command, cwd=REPO_ROOT, capture_output=True, text=True, timeout=120)
             self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
+            inputs = json.loads((fused_root / "fusion_inputs.json").read_text())
+            self.assertEqual(inputs["baseline"]["kind"], "unpacked_notebook_output")
+            environment = json.loads((fused_root / "local_forensic/environment.json").read_text())
+            self.assertEqual(environment["device"], "cpu")
+            fusion_metadata = json.loads((fused_root / "local_forensic/run_metadata.json").read_text())
+            self.assertIn("scripts/fuse_aiface_spectral.py", fusion_metadata["source_sha256"])
+            self.assertEqual(fusion_metadata["forensic_run_metadata_sha256"], sha256_file(output / "run_metadata.json"))
             triple = pd.read_csv(fused_root / "global_local_forensic/predictions_test.csv")
             np.testing.assert_allclose(triple.probability,
                 (predictions["global_only"]["test"] + predictions["local_only"]["test"] + expected.probability.to_numpy()) / 3)
