@@ -6,6 +6,7 @@ __pycache__/
 venv/
 env/
 .env
+.krun/
 
 # Notebooks
 .ipynb_checkpoints/
@@ -13,6 +14,9 @@ env/
 # Data and model artifacts
 data/
 datasets/
+kaggle_upload/
+kaggle_phase4_upload/
+kaggle_phase5_seed_upload/
 *.pt
 *.pth
 *.ckpt

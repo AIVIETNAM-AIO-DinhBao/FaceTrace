@@ -33,7 +33,7 @@ Không dùng TinyCNN residual của pilot Who Is AI làm forensic branch chính 
 Dùng đúng dataset và fixed split:
 
 ```text
-aiface_pilot_32k
+nguyentrann0703/aiface-pilot-32k-single-bin
 ```
 
 | Split | Fake generators |

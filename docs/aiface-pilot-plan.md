@@ -483,7 +483,7 @@ Không để việc implement spectral branch thay đổi baseline Global/Local 
 - Exact duplicate repair: **hoàn tất**; đã thay 3 ảnh real bị trùng byte và lưu `audit/repair_report.json`.
 - Phase C — Quality gate: **đạt**; `audit/quality_gate.json` ghi 32.000 file RGB đọc được, cân bằng lớp, không duplicate SHA-256 và generator-disjoint. DINOv3 smoke test **đã pass trên MPS** trong env `video-highlight`.
 - Identity audit: **chưa đạt identity-disjointness**; số overlap identity heuristic được lưu trong `audit/quality_gate.json`. Không được gọi split này là identity-disjoint.
-- Phase D — Kaggle package: **package và audit đã hoàn tất**; KRun dry-run đã pass. Kaggle dataset private `nguyentrann0703/aiface-pilot-32k` đang chờ xác nhận trước khi publish account-level.
-- Phase D — Kaggle execution: **chưa xác nhận thành công**; dataset file-rời từng gặp lỗi mount, archive `.tar` đã được chuẩn bị để upload thủ công và chạy lại.
-- Phase E — Main pilot: **chưa chạy**; chưa có kết quả AI-Face cho Global/Local/Forensic hoặc fusion.
-- Phase F — Robustness, seed và báo cáo cuối: **chưa bắt đầu**.
+- Phase D — Kaggle package: **package và audit đã hoàn tất**; dataset shared dùng cho nhóm là `nguyentrann0703/aiface-pilot-32k-archive`.
+- Phase D — Kaggle execution: **đã xác nhận thành công cho package single-bin**; dataset `nguyentrann0703/aiface-pilot-32k-single-bin` được giải nén vào workspace bởi runner và fixed manifests được đọc thành công. Dataset archive nhiều file trước đó vẫn từng gặp lỗi mount hạ tầng.
+- Phase E — Main pilot: **baseline Global/Local đã hoàn tất; tổng thể partially complete**. Global-only, Local-only, Global + Local và shortcut diagnostic đã chạy full trên test unseen; Forensic-only và các fusion có Forensic chưa chạy.
+- Phase F — Robustness, seed và báo cáo cuối: **chưa bắt đầu**; báo cáo baseline hiện tại nằm ở `docs/aiface-phase-e-report.md`.

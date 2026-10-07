@@ -1,0 +1,15 @@
+# These files are useful for local research but are not runtime dependencies.
+papers/
+research/
+docs/
+notebooks/
+!notebooks/
+notebooks/*
+!notebooks/10_aiface_phase_e_baseline.ipynb
+kaggle_upload/
+kaggle_phase4_upload/
+kaggle_phase5_seed_upload/
+kaggle artifacts/
+PLAN.pdf
+RESEARCH_OUTLINE.pdf
+*.pdf
