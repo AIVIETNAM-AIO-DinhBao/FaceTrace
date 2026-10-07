@@ -18,7 +18,7 @@ import yaml
 
 from src.evaluation.aiface_phase_e import select_threshold
 from src.evaluation.spectral import (
-    GENERATOR_SPLITS, align_predictions, save_predictions, select_validation_threshold, validate_pilot, write_json,
+    GENERATOR_SPLITS, align_predictions, find_subset_metadata, save_predictions, select_validation_threshold, validate_pilot, write_json,
 )
 from src.input_data.spectral_dataset import SpectralDataset
 from src.models.classifier import MLPClassifier
@@ -160,6 +160,8 @@ class SpectralTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             manifests, bases = make_fixture(Path(directory))
             validate_pilot(manifests, bases, require_32k=False)
+            with self.assertRaisesRegex(ValueError, "counts do not match"):
+                validate_pilot(manifests, bases, require_32k=True)
             dataset = SpectralDataset(manifests["train"], bases["train"], 16)
             self.assertEqual(dataset[0]["image_id"], dataset.frame.iloc[0].image_id)
             self.assertEqual(dataset[0]["label"].item(), int(dataset.frame.iloc[0].label))
@@ -196,10 +198,36 @@ class SpectralTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 runner.unpack_dataset(symlink, root / "work3")
 
+    def test_discovery_does_not_require_metadata_at_root(self):
+        runner = script_module("run_aiface_spectral_kaggle")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            package = root / "pilot"
+            make_fixture(package)
+            metadata = package / "subset_metadata.json"
+            (package / "audit").mkdir()
+            metadata.rename(package / "audit/subset_metadata.json")
+            self.assertEqual(runner.find_dataset_root(root), package.resolve())
+            self.assertEqual(find_subset_metadata(package), package / "audit/subset_metadata.json")
+            archive = root / "pilot.bin"
+            with tarfile.open(archive, "w") as handle:
+                handle.add(package, arcname="pilot")
+            extracted = runner.unpack_dataset(archive, root / "working")
+            self.assertEqual(find_subset_metadata(extracted), extracted / "audit/subset_metadata.json")
+            # Absence is a metadata error, not proof that manifests are absent.
+            missing_metadata = package / "missing_metadata"
+            metadata_path = package / "audit/subset_metadata.json"
+            metadata_path.rename(missing_metadata)
+            self.assertEqual(runner.find_dataset_root(package), package.resolve())
+            self.assertIsNone(find_subset_metadata(package))
+
     def test_end_to_end_training_and_checkpoint_prediction(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             manifests, bases = make_fixture(root / "dataset")
+            # Match the actual published single-bin: no subset_metadata.json.
+            fixture_metadata = root / "dataset/subset_metadata.json"
+            fixture_metadata.rename(root / "original_fixture_metadata.json")
             config = yaml.safe_load((REPO_ROOT / "configs/spectral.yaml").read_text())
             config["data"].update(image_size=16, num_workers=0, require_32k=False, batch_size=8)
             config["model"].update(radial_bins=8, hidden_dim=8)
@@ -224,6 +252,11 @@ class SpectralTests(unittest.TestCase):
             train_features = torch.load(output / "features_train.pt", weights_only=True)["features"]
             torch.testing.assert_close(checkpoint["state_dict"]["feature_mean"], train_features.mean(0))
             self.assertEqual(json.loads((output / "run_metadata.json").read_text())["rows_used"]["test"], len(expected))
+            recorded = json.loads((output / "run_metadata.json").read_text())
+            self.assertFalse(recorded["original_subset_metadata_available"])
+            self.assertIsNone(recorded["subset_metadata"])
+            self.assertIsNone(recorded["manifest_derived_evidence"]["original_sampling_seed"])
+            self.assertEqual(recorded["manifest_derived_evidence"]["rows"]["test"], len(expected))
 
             # Simulate the exact current AI-Face baseline artifact format, with
             # no validation CSVs. Verify reconstruction, fusion and rescue/harm.

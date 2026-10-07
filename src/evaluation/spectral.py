@@ -36,6 +36,18 @@ def resolve_manifests(root: str | Path):
     raise FileNotFoundError(f"No complete train/val/test manifests under {root}")
 
 
+def find_subset_metadata(root: str | Path) -> Path | None:
+    """Accept subset metadata beside the manifests or in a package subfolder."""
+    root = Path(root)
+    canonical = root / "subset_metadata.json"
+    if canonical.is_file():
+        return canonical
+    candidates = sorted(root.rglob("subset_metadata.json"))
+    if len(candidates) > 1:
+        raise ValueError(f"Multiple subset_metadata.json files under {root}: {candidates}")
+    return candidates[0] if candidates else None
+
+
 def validate_pilot(manifests, bases, require_32k: bool = True):
     protocol = validate_fixed_manifests(manifests, bases)
     all_paths = set()

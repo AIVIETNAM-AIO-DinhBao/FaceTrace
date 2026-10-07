@@ -23,7 +23,7 @@ import yaml
 
 from src.evaluation.aiface_phase_e import sha256_file
 from src.evaluation.spectral import (
-    resolve_manifests, save_predictions, smoke_frame, validate_pilot, write_json,
+    find_subset_metadata, resolve_manifests, save_predictions, smoke_frame, validate_pilot, write_json,
 )
 from src.input_data.spectral_dataset import SpectralDataset
 from src.models.spectral import RadialFFT, parameter_count
@@ -78,10 +78,32 @@ def main():
     root = Path(args.data_root).resolve()
     manifests, bases = resolve_manifests(root)
     protocol = validate_pilot(manifests, bases, config["data"]["require_32k"])
-    metadata_path = root / "subset_metadata.json"
-    if config["data"]["require_32k"] and not metadata_path.is_file():
-        raise FileNotFoundError(f"Required subset_metadata.json is missing under {root}")
-    subset_metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.is_file() else {}
+    metadata_path = find_subset_metadata(root)
+    # The published single-bin package contains the images and fixed manifests
+    # but omits original subset_metadata.json. Do not fabricate the missing
+    # provenance or claim the source audit was read: record the absence and
+    # derive only the facts validated from the mounted manifests.
+    subset_metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path else None
+    manifest_evidence = {
+        "source": "validated_mounted_manifests",
+        "rows": protocol["rows"], "generator_splits": protocol["generator_splits"],
+        "label_mapping": {"0": "real", "1": "fake"},
+        "class_counts": {split: {str(label): int(count) for label, count in frame.label.value_counts().items()}
+                         for split, frame in protocol["frames"].items()},
+        "real_sources": {split: sorted(frame.loc[frame.label == 0, "real_source"].unique().tolist())
+                         if "real_source" in frame else None for split, frame in protocol["frames"].items()},
+        "original_sampling_seed": subset_metadata.get("seed") if isinstance(subset_metadata, dict) else None,
+        "original_quality_gate_read": False,
+    }
+    archive_metadata = None
+    for directory in (root, *root.parents):
+        if directory.name.startswith("aiface_spectral_dataset_"):
+            marker = directory / ".archive_metadata.json"
+            if marker.is_file():
+                archive_metadata = json.loads(marker.read_text(encoding="utf-8"))
+            break
+    if metadata_path is None:
+        print("Original subset_metadata.json: absent from package; recording manifest-derived evidence only", flush=True)
     print("Split mode: generator_disjoint_fixed; Random fallback: disabled", flush=True)
     for split in ("train", "val", "test"):
         print(f"{split} generators: {protocol['generator_splits'][split]}", flush=True)
@@ -139,8 +161,11 @@ def main():
         "dataset_slug": config["experiment"]["dataset_slug"],
         "dataset_version": config["experiment"].get("dataset_version"),
         "manifest_sha256": protocol["manifest_sha256"],
-        "subset_metadata_sha256": sha256_file(metadata_path) if metadata_path.is_file() else None,
-        "subset_metadata": subset_metadata, "generator_splits": protocol["generator_splits"],
+        "subset_metadata_path": str(metadata_path) if metadata_path else None,
+        "subset_metadata_sha256": sha256_file(metadata_path) if metadata_path else None,
+        "subset_metadata": subset_metadata, "original_subset_metadata_available": metadata_path is not None,
+        "manifest_derived_evidence": manifest_evidence, "archive_metadata": archive_metadata,
+        "generator_splits": protocol["generator_splits"],
         "split_mode": "generator_disjoint_fixed", "seed": config["experiment"]["seed"],
         "device": str(device), "smoke": args.smoke,
         "rows_used": {split: len(frame) for split, frame in frames.items()},

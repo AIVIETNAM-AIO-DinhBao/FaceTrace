@@ -38,6 +38,8 @@ Phải thấy `Forensic-only SMOKE PASS`. Smoke artifacts nằm trong `forensic_
 
 Dataset được giải nén vào `/kaggle/temp` để không lưu thêm 32k ảnh vào Output. Code không random split; nó đọc đúng train/val/test đã có. Không có checkpoint/threshold nào được chọn từ test.
 
+Bản single-bin hiện chứa `train/manifest.csv`, `val/manifest.csv`, `test/manifest.csv` và ảnh, nhưng không kèm `subset_metadata.json`. Runner nhận diện dataset từ manifest/ảnh và vẫn kiểm tra schema, đủ 32k ảnh, class balance, generator mapping/disjointness, đường dẫn và ID. Artifact ghi `original_subset_metadata_available=false`, checksum archive/manifest và `manifest_derived_evidence`; không giả tạo metadata gốc hay claim đã đọc quality gate gốc. Nếu metadata được bổ sung ở root hoặc thư mục con, runner sẽ đọc file đó.
+
 ## 3. Chạy đầy đủ
 
 1. Điền `DATASET_VERSION` bằng số version của dataset ảnh đang attach (xem metadata/input trên Kaggle).

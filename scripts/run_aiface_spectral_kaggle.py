@@ -13,7 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.evaluation.aiface_phase_e import sha256_file
+from src.evaluation.aiface_phase_e import read_manifest, sha256_file
 from src.evaluation.spectral import resolve_manifests, write_json
 
 
@@ -28,12 +28,17 @@ def find_dataset_root(root: Path) -> Path | None:
             candidates.add(path.parent.parent.resolve())
     valid = []
     for candidate in sorted(candidates):
-        # Baseline output artifacts also contain manifests, but are not a
-        # mounted image dataset. Only accept pilot packages with metadata.
-        if not (candidate / "subset_metadata.json").is_file():
-            continue
         try:
-            resolve_manifests(candidate)
+            manifests, bases = resolve_manifests(candidate)
+            # Identify an image package from its manifests and image files.
+            # Metadata placement is checked separately by the trainer; it must
+            # not hide valid train/val/test manifests during root discovery.
+            for split, manifest in manifests.items():
+                frame = read_manifest(manifest)
+                sample = Path(str(frame.iloc[0]["image_path"]))
+                image = sample if sample.is_absolute() else bases[split] / sample
+                if not image.is_file():
+                    raise FileNotFoundError(f"Sample {split} image is missing: {image}")
             valid.append(candidate)
         except FileNotFoundError:
             pass
@@ -79,7 +84,12 @@ def unpack_dataset(input_root: Path, work_root: Path) -> Path:
         print(f"Extracted dataset archive: {archive} -> {target}", flush=True)
     dataset_root = find_dataset_root(target)
     if dataset_root is None:
-        raise FileNotFoundError("Extracted archive has no complete fixed train/val/test manifests")
+        inventory = sorted(str(path.relative_to(target)) for path in target.rglob("*")
+                           if path.is_file() and path.suffix.lower() in {".csv", ".json"})
+        raise FileNotFoundError(
+            f"No readable image dataset with fixed train/val/test manifests under {target}. "
+            f"CSV/JSON files found: {inventory[:40]}"
+        )
     return dataset_root
 
 
