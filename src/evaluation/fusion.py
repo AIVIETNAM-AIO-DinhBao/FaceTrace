@@ -14,15 +14,19 @@ def load_prediction_csv(path) -> pd.DataFrame:
     """Load and validate one validation prediction CSV."""
 
     frame = pd.read_csv(path)
-    required = {"image_id", "label", "prob_fake"}
+    probability_column = "prob_fake" if "prob_fake" in frame.columns else "probability"
+    required = {"image_id", "label", probability_column}
     missing = required - set(frame.columns)
     if missing:
         raise ValueError(f"Prediction file is missing columns: {sorted(missing)}")
     if frame["image_id"].duplicated().any():
         raise ValueError(f"Prediction file contains duplicate image_id values: {path}")
-    if not np.isfinite(frame["prob_fake"]).all() or not frame["prob_fake"].between(0.0, 1.0).all():
+    if not np.isfinite(frame[probability_column]).all() or not frame[probability_column].between(0.0, 1.0).all():
         raise ValueError(f"Prediction file contains invalid probabilities: {path}")
-    return frame[["image_id", "label", "prob_fake"]].copy()
+    result = frame[["image_id", "label", probability_column]].copy()
+    if probability_column != "prob_fake":
+        result = result.rename(columns={probability_column: "prob_fake"})
+    return result
 
 
 def merge_predictions(predictions: Mapping[str, pd.DataFrame]) -> pd.DataFrame:

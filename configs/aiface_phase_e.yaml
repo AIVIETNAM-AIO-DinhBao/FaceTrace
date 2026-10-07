@@ -1,0 +1,32 @@
+experiment:
+  name: aiface_phase_e
+  seed: 42
+  output_dir: outputs/aiface_phase_e
+  dataset_slug: nguyentrann0703/aiface-pilot-32k-single-bin
+
+data:
+  image_size: 224
+  batch_size: 32
+  num_workers: 2
+
+model:
+  backbone: facebook/dinov3-vitb16-pretrain-lvd1689m
+  revision: null
+  freeze_backbone: true
+  local_pooling: mean
+  hidden_dim: 256
+  dropout: 0.0
+  num_classes: 2
+
+training:
+  epochs: 20
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  device: auto
+  mixed_precision: true
+  pin_memory: true
+
+evaluation:
+  threshold_selection: validation_balanced_accuracy_then_f1_then_closest_to_0.5
+  fusion: equal_probability_mean
+  metrics: [auroc, balanced_accuracy, accuracy, f1]
