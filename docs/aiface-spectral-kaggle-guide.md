@@ -49,6 +49,8 @@ Nếu chạy tương tác nhiều lần, source hoặc checkpoint cũ có thể 
 
 Notebook mặc định train MLP 20 epoch, seed 42. Cấu hình FFT: Hann đối xứng, FFT2 float32, `log1p(abs(spectrum))`, 64 radial bins phủ tâm đến góc phổ trên từng kênh RGB. Vector 192 chiều; MLP 192→128→2 có 24.962 tham số. Chuẩn hóa feature bằng mean/std **chỉ fit trên train**, lưu trong checkpoint.
 
+Radial bins được chia bằng so sánh bình phương khoảng cách và biên bằng số nguyên; pixel đúng trên biên thuộc bin cao hơn, góc phổ thuộc bin cuối. Cách này tránh sai lệch làm tròn sqrt/division giữa NumPy/PyTorch trên Windows/Kaggle. Version quy tắc nằm trong config/metadata; checkpoint theo quy tắc cũ cần train lại trước khi dùng predictor mới.
+
 Resize square bilinear antialias 224×224, EXIF transpose, RGB; không thêm crop/augmentation. Geometry theo runner DINOv3 AI-Face hiện tại; pixel FFT ở [0,1], không ImageNet normalization. Khi baseline đổi processor/geometry, cần đồng bộ cấu hình và kiểm tra lại trước khi so sánh. Mã nguồn processor chính thức: https://github.com/huggingface/transformers/blob/v4.56.1/src/transformers/models/dinov3_vit/image_processing_dinov3_vit_fast.py
 
 ## 4. Artifact cần gửi cho bạn kia

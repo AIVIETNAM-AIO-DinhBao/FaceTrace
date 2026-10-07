@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import math
 from pathlib import Path
 import subprocess
 import sys
@@ -72,11 +73,34 @@ class SpectralTests(unittest.TestCase):
         spectrum = np.log1p(np.abs(np.fft.fftshift(np.fft.fft2(values * window), axes=(-2, -1))))
         axis = np.arange(16) - 8
         yy, xx = np.meshgrid(axis, axis, indexing="ij")
-        radius = np.hypot(xx, yy)
-        bins = np.minimum((radius / radius.max() * 8).astype(int), 7)
-        expected = np.stack([spectrum[:, :, bins == index].mean(-1) for index in range(8)], axis=-1)
+        # Independent NumPy reference: exact integer annular masks, including
+        # points ON a boundary in its higher bin. Float sqrt/floor can differ
+        # across platforms even at float64 precision (e.g. diagonal (3, 3)).
+        squared = xx**2 + yy**2
+        scaled_squared = squared * 8**2
+        masks = [
+            (scaled_squared >= index**2 * squared.max()) &
+            ((scaled_squared < (index + 1)**2 * squared.max()) if index < 7 else True)
+            for index in range(8)
+        ]
+        expected = np.stack([spectrum[:, :, mask].mean(-1) for mask in masks], axis=-1)
         np.testing.assert_allclose(actual, expected, rtol=1e-5, atol=1e-5)
         self.assertEqual(parameter_count(transform), 0)
+
+    def test_exact_radial_boundaries_and_integer_reference(self):
+        transform = RadialFFT(16, 8)
+        bins = transform.bin_index.reshape(16, 16)
+        # Diagonal (k,k) has exactly radius k/8 * r_max for this geometry.
+        self.assertEqual([int(bins[8 + k, 8 + k]) for k in range(8)], list(range(8)))
+        self.assertEqual(int(bins[0, 0]), 7)  # Include the maximum-radius corner.
+        for size, count in ((16, 8), (224, 64), (15, 8), (16, 1)):
+            center = size // 2
+            maximum_squared = 2 * center**2
+            expected = [
+                min(count - 1, math.isqrt(((y - center)**2 + (x - center)**2) * count**2 // maximum_squared))
+                for y in range(size) for x in range(size)
+            ]
+            self.assertEqual(RadialFFT(size, count).bin_index.tolist(), expected)
 
     def test_window_shapes_finiteness_and_batch_invariance(self):
         transform = RadialFFT()

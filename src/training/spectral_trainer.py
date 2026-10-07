@@ -106,6 +106,8 @@ class SpectralPredictor:
         self.device = select_device(device)
         payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
         self.config = payload["config"]
+        if self.config.get("resolved", {}).get("radial_binning") != RadialFFT.BINNING_VERSION:
+            raise ValueError("Checkpoint uses an older radial-binning rule; retrain with the current spectral code")
         self.metadata = payload["run_metadata"]
         self.threshold = float(payload["threshold"])
         data, model = self.config["data"], self.config["model"]

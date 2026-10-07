@@ -125,6 +125,7 @@ def main():
     config["resolved"] = {
         "feature_dim": fft.output_dim, "trainable_parameters": parameter_count(result["model"]),
         "radial_edges_pixels": fft.radial_edges.cpu().tolist(),
+        "radial_binning": RadialFFT.BINNING_VERSION,
         "best_epoch": result["best_epoch"], "threshold": result["threshold"], "smoke": args.smoke,
     }
     metadata = {
@@ -145,6 +146,7 @@ def main():
         "rows_used": {split: len(frame) for split, frame in frames.items()},
         "used_manifest_sha256": {split: sha256_file(frame_dir / f"{split}.csv") for split in frames},
         "preprocessing": config["data"], "checkpoint_selection": config["evaluation"]["checkpoint_selection"],
+        "radial_binning": RadialFFT.BINNING_VERSION,
         "threshold_selection": config["evaluation"]["threshold_selection"],
         "fusion": config["evaluation"]["fusion"], "threshold": result["threshold"],
         "test_evaluation_policy": "after checkpoint and validation threshold are locked",

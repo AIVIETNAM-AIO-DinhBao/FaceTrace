@@ -14,26 +14,35 @@ class RadialFFT(nn.Module):
     FFT and windowing always operate in float32 (including on CUDA).
     """
 
+    BINNING_VERSION = "integer_squared_edges_v1"
+
     def __init__(self, image_size: int = 224, radial_bins: int = 64):
         super().__init__()
         if image_size < 4 or radial_bins < 1:
             raise ValueError("image_size >= 4 and radial_bins >= 1 are required")
         self.image_size = image_size
         self.radial_bins = radial_bins
-        window = torch.hann_window(image_size, periodic=False)
+        window = torch.hann_window(image_size, periodic=False, dtype=torch.float32)
         self.register_buffer("window", torch.outer(window, window))
-        # Construct bin ownership in float64 so pixels on annular boundaries
-        # do not move to a neighbouring bin through float32 rounding.
-        axis = torch.arange(image_size, dtype=torch.float64) - image_size // 2
+        # Bin k owns [k * r_max / B, (k + 1) * r_max / B); the final bin
+        # includes the corner. Compare squared distances with integer edges:
+        # r² * B² >= k² * r_max². sqrt/division rounding near exact boundaries
+        # otherwise assigns pixels differently across NumPy/PyTorch platforms,
+        # even in float64. right=True puts exact boundaries in the higher bin.
+        axis = torch.arange(image_size, dtype=torch.int64) - image_size // 2
         yy, xx = torch.meshgrid(axis, axis, indexing="ij")
-        radius = torch.sqrt(xx.square() + yy.square())
-        bins = (radius / radius.max() * radial_bins).long().clamp(max=radial_bins - 1)
+        radius_squared = xx.square() + yy.square()
+        max_radius_squared = int(radius_squared.max())
+        squared_edges = torch.arange(1, radial_bins, dtype=torch.int64).square() * max_radius_squared
+        bins = torch.bucketize(radius_squared * radial_bins**2, squared_edges, right=True)
         counts = torch.bincount(bins.flatten(), minlength=radial_bins).float()
         if (counts == 0).any():
             raise ValueError("Too many radial bins: at least one annulus is empty")
         self.register_buffer("bin_index", bins.flatten())
         self.register_buffer("bin_counts", counts)
-        self.register_buffer("radial_edges", torch.linspace(0, radius.max(), radial_bins + 1))
+        self.register_buffer("radial_edges", torch.linspace(
+            0, max_radius_squared**0.5, radial_bins + 1, dtype=torch.float32
+        ))
 
     @property
     def output_dim(self) -> int:
