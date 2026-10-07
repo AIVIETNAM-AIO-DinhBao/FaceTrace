@@ -1,0 +1,39 @@
+experiment:
+  name: aiface_phase_e_spectral
+  seed: 42
+  output_dir: outputs/aiface_phase_e/forensic_only
+  dataset_slug: nguyentrann0703/aiface-pilot-32k-single-bin
+  dataset_version: null  # Fill with the attached Kaggle dataset version for the final run.
+
+data:
+  image_size: 224
+  batch_size: 64
+  num_workers: 2
+  resize: square_bilinear_antialias
+  crop: none
+  pixel_range: [0.0, 1.0]
+  require_32k: true
+  smoke_per_group: 8
+
+model:
+  radial_bins: 64
+  hidden_dim: 128
+  dropout: 0.0
+  window: hann_symmetric
+  fft_norm: backward
+  spectrum: log1p_magnitude
+  radial_range: zero_to_corner
+  channel_mode: rgb_separate
+  feature_normalization: train_mean_std
+
+training:
+  epochs: 20
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  device: auto
+
+evaluation:
+  checkpoint_selection: validation_auroc_then_balanced_accuracy_at_0.5
+  threshold_selection: validation_balanced_accuracy_then_f1_then_closest_to_0.5
+  fusion: equal_probability_mean
