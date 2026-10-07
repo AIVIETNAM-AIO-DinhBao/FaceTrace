@@ -170,7 +170,8 @@ Chỉ chạy DINOv3/forensic pipeline sau khi tất cả điều kiện sau đ�
 - mỗi generator có tối đa 2.000 ảnh;
 - không có generator overlap giữa train, val và test;
 - exact image path overlap bằng 0;
-- identity overlap bằng 0 nếu identity parse được;
+- identity overlap phải được audit và ghi vào artifact; nếu khác 0 thì phải đánh dấu
+  rõ là chưa identity-disjoint và không được dùng làm claim đã loại bỏ identity leakage;
 - không có path đến `deepfakes/` trong manifest;
 - tất cả local path trong manifest tồn tại và đọc được;
 - train/val/test có cùng preprocessing;
@@ -203,15 +204,269 @@ Chỉ chạy DINOv3/forensic pipeline sau khi tất cả điều kiện sau đ�
 - Không upload outer archives.
 - Ghi rõ dataset version, seed và manifest checksum trong artifact.
 
+#### 9.1. Hai hình thức package
+
+Pilot có hai hình thức package để giảm rủi ro Kaggle không mount được 32.000 file
+nhỏ:
+
+```text
+kaggle_upload/aiface_pilot_32k/
+kaggle_upload/aiface_pilot_32k_archive/aiface_pilot_32k.tar
+```
+
+Package file rời dễ kiểm tra thủ công nhưng có thể gây lỗi mount hoặc timeout khi
+Kaggle dựng filesystem. Package archive là phương án ưu tiên nếu Kaggle báo lỗi
+`ERRORED_MOUNTING_DATASET` hoặc retry mount nhiều lần.
+
+Không upload các outer archive AI-Face hoặc ảnh ngoài subset. Archive chỉ được chứa
+ảnh đã chọn, manifest, `subset_metadata.json` và audit cần thiết.
+
+#### 9.2. Kiểm tra bắt buộc sau khi mount
+
+Một run Kaggle chỉ được xem là hợp lệ khi log có đủ các dấu hiệu sau:
+
+```text
+Extracted dataset archive
+Split mode: generator_disjoint_fixed
+train generators: ...
+val generators: ...
+test generators: ...
+test manifest: ...
+```
+
+Runner phải xác nhận:
+
+- `train/manifest.csv`, `val/manifest.csv` và `test/manifest.csv` tồn tại;
+- tất cả path trong manifest tồn tại sau khi giải nén;
+- `subset_metadata.json` được đọc thành công;
+- generator test không giao với generator train/validation;
+- test manifest được giữ riêng và không được dùng để chọn checkpoint hoặc threshold;
+- runner không gọi random split fallback.
+
+Nếu log hiển thị `in_domain_random_fallback`, run đó chỉ là smoke test và không được
+dùng trong báo cáo unseen-generator.
+
 ### Phase E — Main pilot experiment
 
-- Global-only.
-- Local-only.
-- Forensic-only, ưu tiên Radial FFT + MLP.
-- Global + Local.
-- Local + Forensic.
-- Global + Local + Forensic.
-- Báo cáo metric theo từng unseen generator và macro-average.
+#### 9.3. Mục tiêu và câu hỏi kiểm định
+
+Phase E là thí nghiệm chính để kiểm tra câu hỏi:
+
+> Local và forensic representation có cải thiện khả năng generalization của DINOv3
+> trên generator chưa xuất hiện trong tập train hay không?
+
+Đây không phải là một cuộc thi tối ưu accuracy trên random split. Mỗi cấu hình phải
+được huấn luyện trên bốn generator train, chọn checkpoint bằng validation generators,
+và chỉ mở test generators ở bước đánh giá cuối.
+
+#### 9.4. Các cấu hình bắt buộc
+
+Tất cả cấu hình phải dùng cùng fixed split, cùng preprocessing, cùng label mapping và
+cùng seed policy.
+
+1. **Global-only**
+
+   Frozen DINOv3 tạo global feature, sau đó đưa qua classifier nhỏ. Đây là baseline
+   chính để đo giá trị gia tăng của Local và Forensic.
+
+2. **Local-only**
+
+   Frozen DINOv3 tạo patch features. Patch được tổng hợp bằng quy tắc cố định trước
+   classifier; không thay đổi pooling theo từng generator.
+
+3. **Forensic-only**
+
+   Ưu tiên Radial FFT + MLP:
+
+   ```text
+   RGB
+   → fixed resize/crop
+   → Hann window
+   → 2D FFT
+   → log magnitude
+   → radial averaging
+   → MLP nhỏ
+   ```
+
+   Nhánh này được dùng để kiểm tra riêng thông tin phổ tần số. Không gọi kết quả của
+   TinyCNN residual ở tập Who Is AI là kết quả forensic của AI-Face pilot.
+
+4. **Global + Local**
+
+   Kết hợp hai xác suất độc lập bằng late probability fusion. Đây là mốc so sánh để
+   biết forensic có bổ sung ngoài hai representation DINOv3 hay không.
+
+5. **Local + Forensic**
+
+   Dùng để kiểm tra forensic có bổ trợ cho local representation khi không có global
+   feature hay không.
+
+6. **Global + Local + Forensic**
+
+   Là cấu hình đầy đủ, nhưng không mặc định là model cuối. Chỉ giữ cấu hình này nếu
+   cải thiện được macro metric trên unseen generators và không phụ thuộc vào một seed
+   hoặc một generator đơn lẻ.
+
+#### 9.5. Fusion policy
+
+Cấu hình fusion chính là late probability fusion:
+
+```text
+p_fusion = mean(p_branch_1, p_branch_2, ...)
+```
+
+Không chọn trọng số hoặc threshold bằng test set. Nếu thử weighted fusion, trọng số
+chỉ được chọn trên validation generators và phải được ghi trong resolved config trước
+khi chạy test. Feature/latent fusion chỉ là ablation bổ sung, không thay thế protocol
+late fusion chính.
+
+#### 9.6. Đánh giá theo generator
+
+Không chỉ báo cáo một metric gộp cho toàn bộ test. Mỗi run phải lưu:
+
+- AUROC của từng unseen generator;
+- Balanced Accuracy của từng unseen generator;
+- F1 và Accuracy bổ sung;
+- macro-average trên hai unseen generators;
+- confusion matrix;
+- threshold được chọn trên validation;
+- số lượng real/fake của từng generator.
+
+Bảng kết quả chính có dạng:
+
+| Model | STARGAN AUROC | SD-Inpainting AUROC | Macro AUROC | Macro BAcc |
+| --- | ---: | ---: | ---: | ---: |
+| Global-only | ... | ... | ... | ... |
+| Local-only | ... | ... | ... | ... |
+| Forensic-only | ... | ... | ... | ... |
+| Global + Local | ... | ... | ... | ... |
+| Local + Forensic | ... | ... | ... | ... |
+| Global + Local + Forensic | ... | ... | ... | ... |
+
+Kết luận chỉ được dựa trên test unseen sau khi checkpoint, preprocessing và threshold
+đã khóa.
+
+#### 9.7. Artifact bắt buộc của Phase E
+
+Mỗi cấu hình phải lưu độc lập:
+
+```text
+outputs/aiface_phase_e/<model_name>/
+├── config_resolved.yaml
+├── train_log.csv
+├── val_metrics.json
+├── test_metrics_overall.json
+├── test_metrics_by_generator.csv
+├── predictions_test.csv
+├── confusion_matrix.csv
+├── checkpoint.pt
+├── environment.json
+└── run_metadata.json
+```
+
+`run_metadata.json` phải ghi:
+
+- git commit hoặc source version;
+- Kaggle dataset slug/version;
+- manifest checksum;
+- split mode và generator mapping;
+- seed và device;
+- preprocessing;
+- checkpoint selection rule;
+- threshold rule;
+- fusion rule;
+- thời điểm chạy.
+
+#### 9.8. Shortcut diagnostic trước khi kết luận
+
+Ngoài audit thống kê ở Notebook 00, phải chạy một classifier độc lập bằng các feature
+đơn giản:
+
+- file size;
+- luminance;
+- saturation;
+- gray-pixel fraction;
+- edge statistics;
+- resolution và image format nếu có.
+
+Logistic Regression phải được train trên train split và đánh giá trên validation. Nếu
+shortcut đạt AUROC cao bất thường, kết quả model chính phải được gắn cờ và phân tích
+riêng; không được diễn giải là bằng chứng forensic khi chưa kiểm soát shortcut.
+
+#### 9.9. Rescue/harm analysis
+
+Với các cặp `Global + Local`, `Local + Forensic` và `Global + Local + Forensic`, phải
+lưu prediction từng ảnh để tính:
+
+- baseline sai, candidate đúng: rescue;
+- baseline đúng, candidate sai: harm;
+- `net_gain = rescue - harm`;
+- các nhóm trên toàn bộ test và tách theo từng unseen generator.
+
+Phân tích rescue/harm phải dùng cùng test images và cùng threshold với bảng metric,
+không được tính lại trên một subset thuận tiện hơn.
+
+### Phase F — Kiểm chứng và báo cáo
+
+Sau Phase E, nhóm mới chạy các thí nghiệm bổ sung:
+
+- seed 43 và 44 cho các cấu hình chính;
+- JPEG compression, resize, blur và crop robustness;
+- rescue/harm theo từng unseen generator;
+- so sánh late fusion với feature fusion nếu còn tài nguyên;
+- chọn model cuối dựa trên macro AUROC và độ ổn định qua seed;
+- cập nhật `docs/aiface-phase-e-report.md` và báo cáo nghiên cứu.
+
+### Phase G — Tiêu chí hoàn thành và phân công
+
+#### 9.10. Tiêu chí hoàn thành Phase E
+
+Phase E chỉ được đánh dấu **hoàn tất** khi:
+
+- sáu cấu hình bắt buộc đã chạy;
+- tất cả run dùng `generator_disjoint_fixed`;
+- test generators không xuất hiện trong train;
+- có metric riêng cho từng unseen generator và macro-average;
+- có predictions, config và checkpoint tương ứng;
+- shortcut diagnostic đã chạy;
+- rescue/harm đã lưu cho các fusion chính;
+- log chứng minh runner không random split lại;
+- limitation identity và real-source được giữ nguyên trong báo cáo.
+
+Nếu mới chạy baseline hoặc chỉ có một forensic branch, trạng thái phải ghi:
+
+```text
+Phase E — partially complete
+```
+
+không ghi là đã hoàn thành.
+
+#### 9.11. Phân công có thể chạy song song
+
+**Người dùng:**
+
+- upload archive Kaggle;
+- kiểm tra dataset mount và fixed split;
+- chạy Global-only, Local-only và fusion baseline;
+- lưu Kaggle URL, run ID và artifact;
+- xác nhận log `generator_disjoint_fixed`.
+
+**Teammate:**
+
+- implement Radial FFT + MLP trong các file spectral riêng;
+- viết unit test cho dataset, transform và model;
+- chạy forward/training smoke test trên một subset nhỏ;
+- bàn giao checkpoint, config và predictions để tích hợp fusion.
+
+Hai nhánh chỉ cần thống nhất interface:
+
+```text
+predict(image) -> probability
+predict_manifest(manifest) -> predictions.csv
+```
+
+Không để việc implement spectral branch thay đổi baseline Global/Local đang được kiểm
+định.
 
 ## 10. Giới hạn cần ghi trong báo cáo
 
@@ -229,4 +484,6 @@ Chỉ chạy DINOv3/forensic pipeline sau khi tất cả điều kiện sau đ�
 - Phase C — Quality gate: **đạt**; `audit/quality_gate.json` ghi 32.000 file RGB đọc được, cân bằng lớp, không duplicate SHA-256 và generator-disjoint. DINOv3 smoke test **đã pass trên MPS** trong env `video-highlight`.
 - Identity audit: **chưa đạt identity-disjointness**; số overlap identity heuristic được lưu trong `audit/quality_gate.json`. Không được gọi split này là identity-disjoint.
 - Phase D — Kaggle package: **package và audit đã hoàn tất**; KRun dry-run đã pass. Kaggle dataset private `nguyentrann0703/aiface-pilot-32k` đang chờ xác nhận trước khi publish account-level.
-- Phase E — Main pilot: **chưa chạy**.
+- Phase D — Kaggle execution: **chưa xác nhận thành công**; dataset file-rời từng gặp lỗi mount, archive `.tar` đã được chuẩn bị để upload thủ công và chạy lại.
+- Phase E — Main pilot: **chưa chạy**; chưa có kết quả AI-Face cho Global/Local/Forensic hoặc fusion.
+- Phase F — Robustness, seed và báo cáo cuối: **chưa bắt đầu**.
