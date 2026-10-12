@@ -1,0 +1,41 @@
+experiment:
+  name: aiface_phase_f
+  split_id: generator_disjoint_fixed_v1
+  split_seed: 42
+  training_seeds: [42, 43, 44]
+  bootstrap_seed: 2026
+  bootstrap_replicates: 2000
+  confidence_level: 0.95
+
+dataset:
+  slug: nguyentrann0703/aiface-pilot-32k-single-bin
+  test_generators: [STARGAN, StableDiffusion_Inpainting]
+
+robustness:
+  conditions:
+    - clean
+    - jpeg_q70
+    - resize_112_224
+    - blur_r1
+    - center_crop_80
+  jpeg_quality: 70
+  resize: 112_to_224_bilinear
+  blur_radius: 1.0
+  crop: centered_square_80_percent_shorter_side
+  checkpoint_policy: clean_validation_locked
+  threshold_policy: clean_validation_locked
+
+models:
+  - global_only
+  - local_only
+  - forensic_only
+  - global_local
+  - local_forensic
+  - global_local_forensic
+
+selection:
+  primary: val_macro_auroc_mean
+  tie_breakers:
+    - val_macro_balanced_accuracy_mean
+    - val_macro_auroc_sd_ascending
+    - worst_generator_auroc_descending

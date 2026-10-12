@@ -148,7 +148,7 @@ def save_predictions(output: Path, frame, probabilities, threshold: float, split
         per_generator.to_csv(output / "test_metrics_by_generator.csv", index=False)
         confusion_rows(predictions).to_csv(output / "confusion_matrix.csv", index=False)
     else:
-        write_json(output / "val_metrics.json", {
-            **compute_metrics(frame.label, probabilities, threshold), "threshold": threshold,
-        })
+        overall, by_generator = metrics_by_generator(predictions, threshold)
+        write_json(output / "val_metrics.json", {**overall, "threshold": threshold})
+        by_generator.to_csv(output / "val_metrics_by_generator.csv", index=False)
     return predictions

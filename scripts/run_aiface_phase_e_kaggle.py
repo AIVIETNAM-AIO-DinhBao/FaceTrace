@@ -51,6 +51,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default="configs/aiface_phase_e.yaml")
     parser.add_argument("--output-dir", default="outputs/aiface_phase_e")
+    parser.add_argument("--seed", type=int, default=None,
+                        help="Override training seed without changing the fixed manifests.")
     parser.add_argument("--smoke", action="store_true")
     args = parser.parse_args()
 
@@ -72,6 +74,8 @@ def main() -> int:
     ]
     if args.smoke:
         command.append("--smoke")
+    if args.seed is not None:
+        command.extend(["--seed", str(args.seed)])
     return subprocess.run(command, cwd=REPO_ROOT, check=False).returncode
 
 

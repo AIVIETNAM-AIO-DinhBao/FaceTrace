@@ -50,6 +50,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--config", default="configs/aiface_phase_e.yaml")
     parser.add_argument("--data-root", required=True, help="Unpacked AI-Face root containing train/val/test")
     parser.add_argument("--output-dir", default=None)
+    parser.add_argument(
+        "--seed", type=int, default=None,
+        help="Override only the training seed; fixed manifests are never regenerated.",
+    )
     parser.add_argument("--smoke", action="store_true", help="Run only two feature batches and one epoch")
     return parser.parse_args()
 
@@ -243,6 +247,7 @@ def save_branch_artifacts(
     branch_result: dict[str, object],
     test_features: dict[str, object],
     test_frame: pd.DataFrame,
+    val_frame: pd.DataFrame,
     device: torch.device,
     config: dict,
 ) -> tuple[pd.DataFrame, float]:
@@ -250,11 +255,19 @@ def save_branch_artifacts(
     (branch_dir / "config_resolved.yaml").write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
     pd.DataFrame(branch_result["history"]).to_csv(branch_dir / "train_log.csv", index=False)
     threshold = float(branch_result["threshold"])
-    val_metrics = dict(branch_result["val_metrics"])
+    val_predictions = prediction_frame(val_frame, branch_result["val_probabilities"], threshold)
+    val_overall, val_by_generator = metrics_by_generator(val_predictions, threshold)
     (branch_dir / "val_metrics.json").write_text(
-        json.dumps({**val_metrics, "threshold": threshold}, indent=2, allow_nan=False) + "\n", encoding="utf-8"
+        json.dumps({**val_overall, "threshold": threshold}, indent=2, allow_nan=False) + "\n", encoding="utf-8"
     )
-    torch.save({"classifier": branch_result["best_state"], "threshold": threshold, "config": config}, branch_dir / "checkpoint.pt")
+    val_predictions.to_csv(branch_dir / "predictions_val.csv", index=False)
+    val_by_generator.to_csv(branch_dir / "val_metrics_by_generator.csv", index=False)
+    torch.save({
+        "classifier": branch_result["best_state"],
+        "threshold": threshold,
+        "config": config,
+        "input_dim": int(test_features["branch"].shape[1]),
+    }, branch_dir / "checkpoint.pt")
     test_dataset = CachedFeatureDataset(
         test_features["branch"], test_features["labels"], list(range(len(test_features["labels"]))), test_features["image_ids"]
     )
@@ -277,6 +290,8 @@ def main() -> int:
     args = parse_args()
     config_path = (REPO_ROOT / args.config).resolve() if not Path(args.config).is_absolute() else Path(args.config)
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    if args.seed is not None:
+        config.setdefault("experiment", {})["seed"] = int(args.seed)
     data_root = Path(args.data_root).expanduser().resolve()
     output_dir = Path(args.output_dir or config["experiment"]["output_dir"])
     if not output_dir.is_absolute():
@@ -366,7 +381,8 @@ def main() -> int:
             "image_ids": extracted["test"]["image_ids"],
         }
         branch_predictions[branch], _ = save_branch_artifacts(
-            output_dir / f"{branch}_only", results[branch], test_features, test_frame, device, config
+            output_dir / f"{branch}_only", results[branch], test_features, test_frame,
+            frames["val"], device, config
         )
 
     val_predictions = {}
@@ -386,6 +402,10 @@ def main() -> int:
     (fusion_dir / "test_metrics_overall.json").write_text(json.dumps(fusion_overall, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     fusion_by_generator.to_csv(fusion_dir / "test_metrics_by_generator.csv", index=False)
     fusion_predictions.to_csv(fusion_dir / "predictions_test.csv", index=False)
+    fusion_val_predictions = prediction_frame(frames["val"], fusion_val_probability, fusion_threshold)
+    _, fusion_val_by_generator = metrics_by_generator(fusion_val_predictions, fusion_threshold)
+    fusion_val_predictions.to_csv(fusion_dir / "predictions_val.csv", index=False)
+    fusion_val_by_generator.to_csv(fusion_dir / "val_metrics_by_generator.csv", index=False)
     confusion_rows(fusion_predictions).to_csv(fusion_dir / "confusion_matrix.csv", index=False)
     torch.save({"branches": ["global_only", "local_only"], "fusion": "equal_probability_mean", "threshold": fusion_threshold}, fusion_dir / "checkpoint.pt")
     (fusion_dir / "config_resolved.yaml").write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
@@ -401,6 +421,8 @@ def main() -> int:
         "dataset_slug": config["experiment"].get("dataset_slug"), "split_mode": "generator_disjoint_fixed",
         "generator_splits": protocol["generator_splits"], "manifest_sha256": protocol["manifest_sha256"],
         "seed": seed, "device": str(device), "preprocessing": {"image_size": config["data"]["image_size"], "processor": model_name},
+        "model_id": model_name,
+        "model_revision": environment["model_revision"],
         "checkpoint_selection": "validation AUROC then validation Balanced Accuracy",
         "threshold_selection": config["evaluation"]["threshold_selection"], "fusion": "mean(global_probability, local_probability)",
         "test_rows": int(len(test_frame)), "smoke": bool(args.smoke),
