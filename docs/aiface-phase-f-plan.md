@@ -346,12 +346,28 @@ python scripts/select_aiface_model.py \
 
 ## 9. Definition of Done
 
-- [ ] Seed 42, 43 và 44 có đủ ba branch checkpoint và sáu cấu hình output.
-- [ ] Mọi run dùng cùng `generator_disjoint_fixed_v1` và cùng test IDs.
-- [ ] Checkpoint/threshold được chọn từ validation.
-- [ ] Có đủ năm conditions clean/JPEG/resize/blur/center-crop.
-- [ ] Robustness có metric macro, per-generator và delta so với clean.
-- [ ] Bootstrap 2.000 lần, seed 2026, CI 95% và paired differences đã lưu.
-- [ ] Có bảng mean ± SD qua seed 42/43/44.
-- [ ] Model cuối được chọn từ validation trước khi đọc test để ra quyết định.
-- [ ] Có artifact/config/checksum/provenance và cập nhật `aiface-phase-e-report.md`.
+- [x] Seed 42, 43 và 44 có đủ ba branch checkpoint và sáu cấu hình output.
+- [x] Mọi run dùng cùng `generator_disjoint_fixed_v1` và cùng test IDs.
+- [x] Checkpoint/threshold được chọn từ validation.
+- [x] Có đủ năm conditions clean/JPEG/resize/blur/center-crop.
+- [x] Robustness có metric macro, per-generator và delta so với clean.
+- [x] Bootstrap 2.000 lần, seed 2026, CI 95% và paired differences đã lưu.
+- [x] Có bảng mean ± SD qua seed 42/43/44.
+- [x] Model cuối được chọn từ validation trước khi đọc test để ra quyết định.
+- [x] Có artifact/config/checksum/provenance và cập nhật `aiface-phase-e-report.md`.
+
+## 10. Verified outputs
+
+Phase F đã hoàn tất trên local/Kaggle với các output sau:
+
+- `outputs/aiface_phase_f_seed42_complete/`: 35 files, 30 prediction CSVs, metadata seed 42.
+- `outputs/aiface_phase_f_seed43/`: 35 files, 30 prediction CSVs, metadata seed 43.
+- `outputs/aiface_phase_f_seed44/`: 35 files, 30 prediction CSVs, metadata seed 44.
+- `outputs/aiface_phase_f_uncertainty/`: CI theo model/condition, paired deltas, seed mean/SD và bootstrap metadata.
+- `outputs/aiface_phase_f_model_selection_v2/model_selection.json`: validation-only selection; model được chọn là `global_local_forensic`.
+
+Bootstrap được tối ưu bằng NumPy nhưng giữ nguyên protocol: resampling theo
+`generator_id x label`, dùng shared indices cho paired comparisons, seed `2026`,
+2,000 replicates và percentile CI 95%. Artifact seed 44 không có validation CSV,
+nên runner tái tạo clean validation probabilities từ checkpoint trước khi chọn
+threshold; test không được dùng cho quyết định này.

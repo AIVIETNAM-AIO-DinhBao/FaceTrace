@@ -15,6 +15,7 @@ from typing import Iterable, Mapping
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageFilter, ImageOps
+from sklearn.metrics import roc_auc_score
 
 from src.evaluation.aiface_phase_e import metrics_by_generator, select_threshold
 from src.evaluation.metrics import compute_metrics
@@ -175,27 +176,75 @@ def paired_bootstrap(
     }
     point: dict[str, float] = {}
 
-    def score(frame: pd.DataFrame, threshold: float) -> float:
-        overall, by_generator = evaluate_frame(frame, threshold)
+    labels = reference["label"].to_numpy(dtype=int)
+    generators = reference["generator_id"].astype(str).to_numpy()
+    real_indices = np.flatnonzero(labels == 0)
+    fake_indices = {
+        generator: np.flatnonzero((labels == 1) & (generators == generator))
+        for generator in sorted(set(generators[labels == 1]))
+    }
+
+    def score_arrays(probabilities, sampled_real, sampled_fake, threshold):
+        real_scores = probabilities[sampled_real]
+        fake_scores = [probabilities[sampled_fake[generator]] for generator in fake_indices]
         if metric == "overall_auroc":
-            return float(overall["auroc"])
+            scores = np.concatenate([real_scores, *fake_scores])
+            target = np.concatenate([
+                np.zeros(len(real_scores), dtype=int),
+                *[np.ones(len(values), dtype=int) for values in fake_scores],
+            ])
+            return float(roc_auc_score(target, scores))
         if metric == "overall_balanced_accuracy":
-            return float(overall["balanced_accuracy"])
-        key = "auroc" if metric == "macro_auroc" else "balanced_accuracy"
-        return float(by_generator[key].mean()) if not by_generator.empty else float("nan")
+            fake_scores_all = np.concatenate(fake_scores)
+            true_negative_rate = float((real_scores < threshold).mean())
+            true_positive_rate = float((fake_scores_all >= threshold).mean())
+            return (true_negative_rate + true_positive_rate) / 2.0
+        values = []
+        for scores in fake_scores:
+            if metric == "macro_auroc":
+                target = np.concatenate([
+                    np.zeros(len(real_scores), dtype=int),
+                    np.ones(len(scores), dtype=int),
+                ])
+                values.append(float(roc_auc_score(target, np.concatenate([real_scores, scores]))))
+            else:
+                true_negative_rate = float((real_scores < threshold).mean())
+                true_positive_rate = float((scores >= threshold).mean())
+                values.append((true_negative_rate + true_positive_rate) / 2.0)
+        return float(np.mean(values)) if values else float("nan")
+
+    def score_frame(frame: pd.DataFrame, threshold: float) -> float:
+        # Preserve the public helper's behavior for unsupported metric names.
+        if metric not in {"overall_auroc", "overall_balanced_accuracy", "macro_auroc", "macro_balanced_accuracy"}:
+            overall, by_generator = evaluate_frame(frame, threshold)
+            if metric == "overall_auroc":
+                return float(overall["auroc"])
+            key = "auroc" if metric == "macro_auroc" else "balanced_accuracy"
+            return float(by_generator[key].mean()) if not by_generator.empty else float("nan")
+        probabilities = frame["probability"].to_numpy(dtype=float)
+        sampled_fake = {generator: fake_indices[generator] for generator in fake_indices}
+        return score_arrays(probabilities, real_indices, sampled_fake, threshold)
 
     for name, frame in aligned.items():
-        point[name] = score(frame, threshold_by_model[name])
+        point[name] = score_frame(frame, threshold_by_model[name])
     for baseline, candidate in comparisons:
         point[f"{candidate}-{baseline}"] = point[candidate] - point[baseline]
 
     for _ in range(replicates):
-        indices = _bootstrap_indices(reference, rng)
-        sampled = {
-            name: frame.loc[indices].reset_index(drop=True)
+        sampled_real = rng.choice(real_indices, size=len(real_indices), replace=True)
+        sampled_fake = {
+            generator: rng.choice(indices, size=len(indices), replace=True)
+            for generator, indices in fake_indices.items()
+        }
+        scored = {
+            name: score_arrays(
+                frame["probability"].to_numpy(dtype=float),
+                sampled_real,
+                sampled_fake,
+                threshold_by_model[name],
+            )
             for name, frame in aligned.items()
         }
-        scored = {name: score(frame, threshold_by_model[name]) for name, frame in sampled.items()}
         for name, value in scored.items():
             values[name].append(value)
         for baseline, candidate in comparisons:
@@ -247,4 +296,3 @@ def validation_selection_table(records: Iterable[Mapping[str, object]]) -> pd.Da
         ascending=[False, False, True, False],
         kind="mergesort",
     ).reset_index(drop=True)
-

@@ -431,18 +431,60 @@ Các notebook 10/11 seed 42 vẫn cần bổ sung Saved Version URL/version cụ
 metadata nếu nhóm muốn provenance hoàn chỉnh ở cấp từng notebook. Checksum
 ZIP/metadata/source ở trên là bằng chứng đã kiểm tra, không thay bằng URL suy đoán.
 
-## 8. Giới hạn
+## 8. Phase F: robustness, bootstrap và model selection
+
+Phase F được chạy trên cùng `generator_disjoint_fixed_v1` và cùng 8.000 test IDs
+cho seed 42, 43 và 44. Mỗi seed có năm condition độc lập: `clean`, `jpeg_q70`,
+`resize_112_224`, `blur_r1` và `center_crop_80`, với sáu cấu hình prediction.
+Mỗi output đã được kiểm tra có 30 prediction CSVs, metadata đầy đủ và metric theo
+generator. Seed 44 được chạy trên Kaggle T4 sau khi runner được bổ sung fallback
+reconstruct clean validation probabilities từ checkpoint do compact artifact không
+chứa validation CSVs.
+
+Bootstrap dùng prediction đã khóa, không inference lại:
+
+- `2,000` replicates, bootstrap seed `2026`, percentile CI `95%`;
+- resampling theo cell `generator_id x label`;
+- shared indices giữa các model để tính paired differences;
+- `ci_by_model_condition.csv`: 180 rows;
+- `paired_delta_ci.csv`: 90 rows;
+- cả hai file không có `NaN`.
+
+Artifact lưu tại `outputs/aiface_phase_f_uncertainty/`. Seed summary lưu mean và
+sample SD qua seed 42/43/44. Ở condition clean, mean test macro AUROC là:
+
+| Model | Macro AUROC mean ± SD | Macro BAcc mean ± SD |
+|---|---:|---:|
+| Global-only | 0.935225 ± 0.006273 | 0.847042 ± 0.014222 |
+| Local-only | 0.956849 ± 0.003097 | 0.877542 ± 0.008174 |
+| Global + Local | 0.954747 ± 0.003585 | 0.872083 ± 0.004693 |
+| Forensic-only | 0.969722 ± 0.009722 | 0.918958 ± 0.017400 |
+| Local + Forensic | 0.985791 ± 0.003401 | 0.950958 ± 0.013281 |
+| Global + Local + Forensic | 0.984904 ± 0.002955 | 0.952917 ± 0.010876 |
+
+Model cuối được chọn **chỉ bằng validation** qua ba seed trong
+`outputs/aiface_phase_f_model_selection_v2/model_selection.json`:
+`global_local_forensic` đứng hạng 1 theo validation macro AUROC mean, sau đó
+validation BAcc mean, AUROC SD và worst-generator AUROC. Test metrics và
+bootstrap test scores không được dùng để chọn model.
+
+Robustness cho thấy nhánh spectral nhạy hơn với JPEG/blur, trong khi Global/Local
+giữ AUROC ổn định hơn dưới các biến đổi này. Vì vậy kết luận chính là forensic
+đem lại bổ sung rõ ràng trên clean/unseen-generator test, nhưng độ bền trước
+degradation cần được báo cáo condition-by-condition thay vì gộp thành một điểm.
+
+## 9. Giới hạn
 
 - Đây là pilot, mỗi fake generator có 2,000 ảnh; không đại diện cho toàn bộ AI-Face.
 - Real images trong pilot chỉ dùng `imdb_wiki`, nên có nguy cơ real-source shortcut.
 - Generator-disjointness được đảm bảo theo manifest; identity-disjointness chưa được chứng minh đầy đủ từ metadata.
 - Chỉ có hai unseen generators, nên chưa thể khái quát cho mọi GAN hoặc diffusion generator.
-- Seed 42/43/44 đã được chạy full và bổ sung ở mục 4.9; robustness, bootstrap confidence interval và validation-only model selection chưa chạy.
+- Seed 42/43/44 đã được chạy full; robustness, bootstrap confidence interval và validation-only model selection đã hoàn tất trong Phase F.
 - Hai fusion có Forensic và rescue/harm cho bằng chứng bổ sung trên pilot này, nhưng chỉ với equal-probability mean và threshold validation đã khóa; chưa đánh giá calibration hay weighted fusion.
 - Single-bin Forensic không có `subset_metadata.json`; metadata ghi rõ không biết original sampling seed và chưa đọc quality gate gốc. Manifest/class counts/generator mapping được xác minh, không được suy ra đã kiểm định toàn bộ quality gate gốc.
 - Checksum/ID giữa các nhánh đã được đối chiếu; URL Saved Version của notebook 10/11 seed 42 và version input artifact baseline/forensic cần bổ sung đầy đủ khi bàn giao provenance.
 
-## 9. Trạng thái hoàn thành
+## 10. Trạng thái hoàn thành
 
 ### Đã hoàn tất
 
@@ -459,8 +501,12 @@ ZIP/metadata/source ở trên là bằng chứng đã kiểm tra, không thay b�
 ### Bước tiếp theo / provenance còn cần bổ sung
 
 - Bổ sung URL/version Saved Version của Notebook 10/11 seed 42 vào metadata provenance.
-- Chạy robustness năm điều kiện, bootstrap confidence interval và validation-only model selection theo `docs/aiface-phase-f-plan.md`.
 - Bổ sung URL Saved Version và dataset artifact version cho từng seed khi hoàn tất Phase F.
 - Giữ full artifact baseline gốc để tái tạo validation từ feature cache/checkpoint; ZIP fusion hiện giữ compact evidence chứ không thay thế toàn bộ baseline Output.
 
-Kết luận ở thời điểm cập nhật: **Phase E seed 42, 43 và 44 đã có đủ sáu cấu hình, metric và rescue/harm trên cùng test manifest.** Trên ba seed, Local + Forensic giữ AUROC fusion cao nhất ở seed 42/43/44, còn Global + Local + Forensic giữ BAcc cao hơn. Đây là bằng chứng mô tả trên hai unseen generators, chưa phải bằng chứng có ý nghĩa thống kê hoặc tổng quát ngoài pilot; robustness, bootstrap và model selection vẫn cần hoàn tất trước khi chốt model cuối.
+Kết luận ở thời điểm cập nhật: **Phase E và Phase F đã hoàn tất trên pilot AI-Face.**
+Ba seed có đủ sáu cấu hình, robustness năm condition, bootstrap CI và validation-only
+model selection trên cùng test manifest. Đây vẫn là bằng chứng có điều kiện trên
+hai unseen generators và pilot 32.000 ảnh, không phải khẳng định tổng quát cho mọi
+AI generator; các giới hạn về real-source shortcut và identity overlap vẫn giữ
+nguyên.

@@ -78,7 +78,10 @@ def main() -> int:
         metrics_path = root / "metrics_by_condition_model.csv"
         if metrics_path.is_file():
             metrics = pd.read_csv(metrics_path)
-            metrics.insert(0, "seed", seed)
+            if "seed" in metrics.columns:
+                metrics["seed"] = seed
+            else:
+                metrics.insert(0, "seed", seed)
             seed_metric_rows.append(metrics)
         for condition in args.conditions:
             frames = {model: load_prediction(root, condition, model) for model in MODELS}

@@ -25,14 +25,21 @@ training seeds.
 | Notebook 12, fusion seed 44 | Owner / shared | **Verified complete** | Kaggle `ai-face-phase-e-fusion-seed-44`; `downloads/aiface-seed44-fusion/` | Keep fusion ZIP and report metrics | GPU-enabled T4 run; input tests pass; both fusion outputs complete with seed-44 alignment |
 | Manual seed-43 baseline download | Owner | **Verified** | `downloads/aiface-seed43-baseline/aiface_phase_e_seed43_baseline/` | Keep as local provenance copy | `seed=43`, `smoke=false`, manifest aligned with forensic |
 
-## Phase F pending work
+## Phase F status
 
 | Task | Status | Required output |
 |---|---|---|
-| Robustness inference | Not started | Five fixed conditions for seeds 42/43/44, per-generator metrics and deltas vs clean |
-| Bootstrap uncertainty | Not started | 2,000 replicates, seed 2026, 95% CI and paired differences |
-| Validation-only model selection | Not started | `model_selection.json`, validation mean/SD across seeds |
-| Final report update | Not started | Updated Phase E report and final limitations/provenance |
+| Robustness inference | **Verified complete** | `outputs/aiface_phase_f_seed42_complete/`, `outputs/aiface_phase_f_seed43/`, `outputs/aiface_phase_f_seed44/`; 5 conditions, 30 predictions per seed, per-generator metrics and clean deltas |
+| Bootstrap uncertainty | **Verified complete** | `outputs/aiface_phase_f_uncertainty/`; 2,000 replicates, seed 2026, 95% CI and paired differences; 0 NaN values |
+| Validation-only model selection | **Verified complete** | `outputs/aiface_phase_f_model_selection_v2/model_selection.json`; selected `global_local_forensic` without test metrics |
+| Final report/status update | **Verified complete** | Phase F results and limitations recorded in `docs/aiface-phase-e-report.md` and `docs/aiface-phase-f-plan.md` |
+
+### Phase F verification summary
+
+- All seeds use the same `generator_disjoint_fixed_v1` manifests and 8,000 held-out test IDs.
+- Robustness conditions are `clean`, `jpeg_q70`, `resize_112_224`, `blur_r1` and `center_crop_80`.
+- Seed 44 required validation-only reconstruction from clean validation images because the compact Kaggle artifact omitted validation CSVs; test labels were not used for threshold selection.
+- Bootstrap outputs contain 180 model/condition CI rows and 90 paired-delta rows, all with `replicates=2000`, `bootstrap_seed=2026` and no NaN values.
 
 ## Locked protocol
 
