@@ -75,7 +75,12 @@ def load_branch(root: Path, branch: str, device: torch.device):
 def load_test_frame(data_root: Path):
     manifests, bases = resolve_manifests(data_root)
     protocol = validate_pilot(manifests, bases, require_32k=True)
-    return protocol["frames"]["test"].reset_index(drop=True), bases["test"], manifests
+    return (
+        protocol["frames"]["test"].reset_index(drop=True),
+        bases["test"],
+        bases["val"],
+        manifests,
+    )
 
 
 def reconstruct_baseline_validation(root: Path, branch: str, reference: pd.DataFrame) -> pd.DataFrame:
@@ -163,7 +168,13 @@ def prediction_frame(frame: pd.DataFrame, probabilities: np.ndarray) -> pd.DataF
     return result
 
 
-def load_thresholds(baseline_root: Path, forensic_root: Path, fusion_root: Path | None, val_reference: pd.DataFrame):
+def load_thresholds(
+    baseline_root: Path,
+    forensic_root: Path,
+    fusion_root: Path | None,
+    val_reference: pd.DataFrame,
+    validation_frames: dict[str, pd.DataFrame] | None = None,
+):
     frames = {}
     thresholds = {}
     for name, root, filename in (
@@ -186,7 +197,9 @@ def load_thresholds(baseline_root: Path, forensic_root: Path, fusion_root: Path 
         if name == "forensic_only":
             branch_dir = forensic_root
         path = branch_dir / filename
-        if path.is_file():
+        if validation_frames and name in validation_frames:
+            frame = validation_frames[name].copy()
+        elif path.is_file():
             frame = pd.read_csv(path, keep_default_na=False, dtype={"image_id": str})
         elif name in {"global_only", "local_only"}:
             frame = reconstruct_baseline_validation(baseline_root, name, val_reference)
@@ -222,7 +235,7 @@ def main() -> int:
         raise FileExistsError(f"Output exists and is not empty: {output}")
     output.mkdir(parents=True, exist_ok=True)
 
-    test_frame, test_base, manifests = load_test_frame(data_root)
+    test_frame, test_base, val_base, manifests = load_test_frame(data_root)
     val_frame = read_manifest(manifests["val"])
     baseline_metadata = load_json(baseline_root / "run_metadata.json")
     forensic_metadata = load_json(forensic_root / "run_metadata.json")
@@ -258,7 +271,34 @@ def main() -> int:
     heads = {name: load_branch(baseline_root, name, device) for name in ("global_only", "local_only")}
     head_models = {name: value[0] for name, value in heads.items()}
     spectral = SpectralPredictor(forensic_root / "checkpoint.pt", device=str(device))
-    val_frames, thresholds = load_thresholds(baseline_root, forensic_root, fusion_root, val_frame)
+
+    # Some exported Kaggle artifact datasets contain checkpoints but omit the
+    # small validation CSVs. Recompute clean validation probabilities only in
+    # that case so thresholds remain validation-only and test labels untouched.
+    validation_frames = {}
+    missing_baseline = any(
+        not (baseline_root / branch / "predictions_val.csv").is_file()
+        for branch in ("global_only", "local_only")
+    )
+    missing_forensic = not (forensic_root / "predictions_val.csv").is_file()
+    if missing_baseline:
+        print("Validation baseline predictions missing; reconstructing from clean validation images")
+        val_dino = predict_dino(
+            val_frame, val_base, "clean", processor, extractor, head_models, device, args.batch_size
+        )
+        for branch in ("global_only", "local_only"):
+            validation_frames[branch] = prediction_frame(val_frame, val_dino[branch])
+    if missing_forensic:
+        print("Validation forensic predictions missing; reconstructing from clean validation images")
+        val_spectral = predict_spectral(val_frame, val_base, "clean", spectral, args.batch_size)
+        validation_frames["forensic_only"] = prediction_frame(val_frame, val_spectral)
+    val_frames, thresholds = load_thresholds(
+        baseline_root,
+        forensic_root,
+        fusion_root,
+        val_frame,
+        validation_frames=validation_frames or None,
+    )
 
     metric_rows = []
     prediction_rows = []

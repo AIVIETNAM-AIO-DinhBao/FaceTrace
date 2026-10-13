@@ -2,7 +2,7 @@
 
 **Ngày ghi nhận:** 2026-10-07
 **Ngày cập nhật:** 2026-10-13
-**Trạng thái:** Phase E seed 43 và seed 44 đã được xác minh đủ sáu cấu hình; seed 42 là run gốc đang được chạy lại để hoàn tất provenance. Robustness, confidence interval và validation-only model selection thuộc Phase F và chưa chạy.
+**Trạng thái:** Phase E seed 42, seed 43 và seed 44 đã được xác minh đủ sáu cấu hình; seed 42 được xác minh lại qua Notebook 10–12 với artifact provenance đầy đủ. Robustness, confidence interval và validation-only model selection thuộc Phase F và chưa chạy.
 
 **Cập nhật:** Đã kiểm tra trực tiếp cả `facetrace_spectral_artifacts.zip` và `facetrace_fusion_artifacts.zip`. ZIP fusion chứa prediction/metric baseline đầu vào; metric test của cả sáu cấu hình, threshold validation của hai fusion và rescue/harm đã được tính lại, khớp artifact. Manifest checksum, generator mapping, seed, image size và test ID/label/split giữa các nhánh đã được đối chiếu.
 
@@ -51,7 +51,7 @@ Metadata baseline đã được đối chiếu với `input_evidence/baseline_ru
 | Fusion | Mean của xác suất Global và Local |
 | Device | CUDA |
 
-Artifact Forensic xác nhận dataset version `1`, seed `42`, `smoke: false`, kích thước `224 x 224`, train/val/test `16,000/8,000/8,000` và cùng generator mapping bên dưới. Đã xác minh metadata baseline và Forensic có cùng checksum cả ba manifest, seed, generator mapping và image size; prediction test của cả sáu cấu hình có cùng `8,000` ID, label, generator và split. Validation/test có ID không giao nhau. URL Saved Version notebook 11/12 chưa được cung cấp; `kaggle_url` và `kaggle_run_id` trong metadata đang là `null`.
+Artifact Forensic xác nhận dataset version `1`, seed `42`, `smoke: false`, kích thước `224 x 224`, train/val/test `16,000/8,000/8,000` và cùng generator mapping bên dưới. Đã xác minh metadata baseline và Forensic có cùng checksum cả ba manifest, seed, generator mapping và image size; prediction test của cả sáu cấu hình có cùng `8,000` ID, label, generator và split. Validation/test có ID không giao nhau. Metadata đầu vào giữ `kaggle_url`/`kaggle_run_id` là `null`, nhưng provenance của fusion seed 42 được ghi riêng ở mục 7.3.
 
 ### 2.1. Generator mapping
 
@@ -117,9 +117,9 @@ Các giá trị AUROC và Balanced Accuracy dưới đây là trung bình của 
 | Global-only | 0.939942 | 0.857625 | 0.868833 | 0.801033 |
 | Local-only | 0.959689 | 0.883625 | 0.879333 | 0.829744 |
 | Global + Local | 0.958677 | 0.877500 | 0.886917 | 0.828201 |
-| Forensic-only | 0.958515 | 0.898750 | 0.902333 | 0.858245 |
-| Local + Forensic | **0.981896** | 0.935625 | 0.938000 | 0.908781 |
-| Global + Local + Forensic | 0.981608 | **0.940375** | **0.942417** | **0.915116** |
+| Forensic-only | 0.958504 | 0.898875 | 0.902500 | 0.858452 |
+| Local + Forensic | **0.981893** | 0.935625 | 0.938000 | 0.908781 |
+| Global + Local + Forensic | 0.981606 | **0.940375** | **0.942417** | **0.915116** |
 
 Các hàng lấy từ `test_metrics_overall.json` của từng cấu hình trong ZIP fusion, đã tính lại từ prediction test. Manifest/ID đã đồng nhất; so sánh vẫn chỉ thuộc một seed và chưa có confidence interval. `comparison.csv` dùng macro AUROC/BAcc nhưng **overall** Accuracy/F1; bảng này dùng đủ bốn metric **macro** nên Accuracy/F1 không lấy trực tiếp từ hai cột overall của file đó.
 
@@ -129,10 +129,10 @@ Các hàng lấy từ `test_metrics_overall.json` của từng cấu hình trong
 |---|---:|---:|
 | Global-only | 0.893704 | 0.986179 |
 | Local-only | 0.925259 | 0.994119 |
-| Global + Local | 0.923204 | **0.994150** |
-| Forensic-only | 0.965205 | 0.951825 |
-| Local + Forensic | **0.974467** | 0.989325 |
-| Global + Local + Forensic | 0.972129 | 0.991087 |
+| Global + Local | 0.923204 | **0.994151** |
+| Forensic-only | 0.965203 | 0.951805 |
+| Local + Forensic | **0.974465** | 0.989322 |
+| Global + Local + Forensic | 0.972128 | 0.991085 |
 
 ### 4.3. Balanced Accuracy theo generator
 
@@ -141,7 +141,7 @@ Các hàng lấy từ `test_metrics_overall.json` của từng cấu hình trong
 | Global-only | 0.784125 | 0.931125 |
 | Local-only | 0.836125 | 0.931125 |
 | Global + Local | 0.808875 | 0.946125 |
-| Forensic-only | 0.910250 | 0.887250 |
+| Forensic-only | 0.910375 | 0.887375 |
 | Local + Forensic | 0.922625 | 0.948625 |
 | Global + Local + Forensic | **0.924750** | **0.956000** |
 
@@ -152,9 +152,9 @@ Các hàng lấy từ `test_metrics_overall.json` của từng cấu hình trong
 | Global-only | 0.955553 | 0.886750 | 0.886750 | 0.886750 | 0.000002 |
 | Local-only | 0.955251 | 0.883125 | 0.883125 | 0.885459 | 0.000889 |
 | Global + Local | 0.959663 | 0.891125 | 0.891125 | 0.889928 | 0.001555 |
-| Forensic-only | 0.961039 | 0.901125 | 0.901125 | 0.900365 | 0.473062 |
-| Local + Forensic | 0.981139 | 0.935875 | 0.935875 | 0.935528 | 0.313337 |
-| Global + Local + Forensic | **0.982985** | **0.941125** | **0.941125** | **0.940940** | 0.220576 |
+| Forensic-only | 0.961035 | 0.901125 | 0.901125 | 0.900365 | 0.472834 |
+| Local + Forensic | 0.981139 | 0.935875 | 0.935875 | 0.935528 | 0.313311 |
+| Global + Local + Forensic | **0.982983** | **0.941125** | **0.941125** | **0.940940** | 0.220520 |
 
 Threshold Global/Local rất thấp so với Forensic, nhưng đều được chọn theo validation đúng protocol. Không được so sánh trực tiếp threshold như một thước đo độ tin cậy giữa các model. Chưa có kiểm định calibration trong báo cáo; hiệu quả equal-probability fusion được đo từ artifact thật ở đây, không suy ra từ riêng threshold. Threshold chính xác của hai fusion là `0.3133365660905838` và `0.2205758609731371`; chọn lại từ CSV validation cho kết quả khớp.
 
@@ -167,9 +167,9 @@ Với Forensic, `train_log.csv` ghi BAcc tại threshold `0.5` (epoch 13: `0.900
 | Global-only | 0.939942 | 0.857625 | 0.857625 | 0.852671 |
 | Local-only | 0.959689 | 0.883625 | 0.883625 | 0.885104 |
 | Global + Local | 0.958677 | 0.877500 | 0.877500 | 0.873939 |
-| Forensic-only | 0.958515 | 0.898750 | 0.898750 | 0.897650 |
-| Local + Forensic | **0.981896** | 0.935625 | 0.935625 | 0.935163 |
-| Global + Local + Forensic | 0.981608 | **0.940375** | **0.940375** | **0.940008** |
+| Forensic-only | 0.958504 | 0.898875 | 0.898875 | 0.897763 |
+| Local + Forensic | **0.981893** | 0.935625 | 0.935625 | 0.935163 |
+| Global + Local + Forensic | 0.981606 | **0.940375** | **0.940375** | **0.940008** |
 
 Ví dụ Forensic có overall F1 `0.897650` khác macro F1 `0.858245`, vì macro là trung bình theo hai nhóm generator có dùng chung real pool. Không dùng overall F1 của một cấu hình để so trực tiếp với macro F1 của cấu hình khác.
 
@@ -180,7 +180,7 @@ Ví dụ Forensic có overall F1 `0.897650` khác macro F1 `0.858245`, vì macro
 | Global-only | 0.819833 | 0.714700 | 0.917833 | 0.887366 |
 | Local-only | 0.847667 | 0.778155 | 0.911000 | 0.881333 |
 | Global + Local | 0.841167 | 0.749277 | 0.932667 | 0.907126 |
-| Forensic-only | 0.910000 | 0.870937 | 0.894667 | 0.845552 |
+| Forensic-only | 0.910167 | 0.871145 | 0.894833 | 0.845759 |
 | Local + Forensic | 0.929333 | 0.894893 | 0.946667 | 0.922668 |
 | Global + Local + Forensic | **0.932000** | **0.898507** | **0.952833** | **0.931725** |
 
@@ -214,11 +214,10 @@ Bảng này lấy từ `rescue_harm_fixed_0.5.csv`, chỉ là phân tích phụ.
 
 ## 4.9. Multi-seed verification
 
-Seed 42 là run Phase E ban đầu và đang được chạy lại qua Notebook 10–12 để xác minh
-đầy đủ provenance. Các giá trị seed 42 bên dưới được giữ từ báo cáo hiện có và chỉ
-được thay khi run lại tạo ra thay đổi có ghi nhận. Giá trị seed 43 và seed 44 được
-đọc từ các fusion artifact đã xác minh tại `downloads/aiface-seed43-fusion/` và
-`downloads/aiface-seed44-fusion/`.
+Seed 42 là run Phase E ban đầu và đã được xác minh lại qua Notebook 10–12. Các giá
+trị seed 42 bên dưới được đọc từ `downloads/aiface-seed42-fusion/` và compact input
+artifact seed 42. Giá trị seed 43 và seed 44 được đọc từ các fusion artifact đã xác
+minh tại `downloads/aiface-seed43-fusion/` và `downloads/aiface-seed44-fusion/`.
 
 Tất cả các hàng dùng cùng test manifest 8.000 ảnh và threshold được chọn trên
 validation.
@@ -230,9 +229,9 @@ validation.
 | Global-only | 0.939942 | 0.857625 | 0.928105 | 0.830875 | 0.937628 | 0.852625 |
 | Local-only | 0.959689 | 0.883625 | 0.957312 | 0.880750 | 0.953547 | 0.868250 |
 | Global + Local | 0.958677 | 0.877500 | 0.951657 | 0.869500 | 0.953908 | 0.869250 |
-| Forensic-only | 0.958515 | 0.898750 | 0.974958 | 0.928500 | 0.975703 | 0.929500 |
-| Local + Forensic | 0.981896 | 0.935625 | 0.987320 | 0.958375 | 0.988160 | 0.958875 |
-| Global + Local + Forensic | 0.981608 | 0.940375 | 0.985797 | 0.958625 | 0.987310 | 0.959750 |
+| Forensic-only | 0.958504 | 0.898875 | 0.974958 | 0.928500 | 0.975703 | 0.929500 |
+| Local + Forensic | 0.981893 | 0.935625 | 0.987320 | 0.958375 | 0.988160 | 0.958875 |
+| Global + Local + Forensic | 0.981606 | 0.940375 | 0.985797 | 0.958625 | 0.987310 | 0.959750 |
 
 ### 4.9.2. Mean and sample SD across seeds
 
@@ -240,10 +239,10 @@ validation.
 |---|---:|---:|
 | Global-only | 0.935225 +/- 0.006274 | 0.847042 +/- 0.014222 |
 | Local-only | 0.956849 +/- 0.003097 | 0.877542 +/- 0.008174 |
-| Global + Local | 0.954747 +/- 0.003584 | 0.872083 +/- 0.004693 |
-| Forensic-only | 0.969725 +/- 0.009716 | 0.918917 +/- 0.017472 |
-| Local + Forensic | 0.985792 +/- 0.003400 | 0.950958 +/- 0.013281 |
-| Global + Local + Forensic | 0.984905 +/- 0.002954 | 0.952917 +/- 0.010876 |
+| Global + Local | 0.954747 +/- 0.003585 | 0.872083 +/- 0.004693 |
+| Forensic-only | 0.969722 +/- 0.009722 | 0.918958 +/- 0.017400 |
+| Local + Forensic | 0.985791 +/- 0.003402 | 0.950958 +/- 0.013281 |
+| Global + Local + Forensic | 0.984904 +/- 0.002955 | 0.952917 +/- 0.010876 |
 
 ### 4.9.3. Per-generator metrics — seed 43
 
@@ -289,9 +288,9 @@ generalization sang generator ngoài `STARGAN` và `StableDiffusion_Inpainting`.
 3. Tuy nhiên `Global + Local` vẫn thấp hơn `Local-only` khoảng `0.001011` AUROC và `0.006125` BAcc. Vì vậy chưa có bằng chứng rằng việc thêm Global vào Local tạo ra cải thiện trên pilot này.
 4. `STARGAN` khó hơn `StableDiffusion_Inpainting` đối với cả ba baseline Global/Local. Forensic có xu hướng ngược lại: AUROC/BAcc trên STARGAN cao hơn trên StableDiffusion_Inpainting. Không nên chỉ báo cáo metric gộp mà bỏ qua từng generator.
 5. So với Local-only, Forensic cao hơn `0.015125` macro BAcc (**1.5125 điểm phần trăm**), nhưng thấp hơn khoảng `0.001174` macro AUROC. Đây không phải bằng chứng một model tốt hơn ở mọi tiêu chí, cũng chưa phải cải thiện có ý nghĩa thống kê.
-6. `Local + Forensic` đạt macro AUROC **0.981896**, cao hơn Local-only khoảng `0.022207`, và BAcc **0.935625**, tăng **5.2000 điểm phần trăm**. Rescue `798` lớn hơn harm `382`, net gain **416 ảnh** trên cùng test manifest. Đây là bằng chứng thực nghiệm về giá trị bổ sung của Forensic khi fusion với Local trong pilot này.
-7. `Global + Local + Forensic` đạt macro AUROC **0.981608**, tăng khoảng `0.022931` so với Global + Local; BAcc **0.940375**, tăng **6.2875 điểm phần trăm**. Rescue `806`, harm `303`, net gain **503 ảnh** so với baseline hai nhánh.
-8. Fusion hai nhánh có AUROC cao nhất; fusion ba nhánh có BAcc/Accuracy/F1 cao nhất. Thêm Global vào Local + Forensic tăng BAcc `0.004750` (**0.4750 điểm phần trăm**, 38 ảnh đúng thêm overall), nhưng giảm AUROC khoảng `0.000288`. Không có cấu hình tốt nhất ở mọi metric.
+6. `Local + Forensic` đạt macro AUROC **0.981893**, cao hơn Local-only khoảng `0.022205`, và BAcc **0.935625**, tăng **5.2000 điểm phần trăm**. Rescue `798` lớn hơn harm `382`, net gain **416 ảnh** trên cùng test manifest. Đây là bằng chứng thực nghiệm về giá trị bổ sung của Forensic khi fusion với Local trong pilot này.
+7. `Global + Local + Forensic` đạt macro AUROC **0.981606**, tăng khoảng `0.022929` so với Global + Local; BAcc **0.940375**, tăng **6.2875 điểm phần trăm**. Rescue `806`, harm `303`, net gain **503 ảnh** so với baseline hai nhánh.
+8. Fusion hai nhánh có AUROC cao nhất; fusion ba nhánh có BAcc/Accuracy/F1 cao nhất. Thêm Global vào Local + Forensic tăng BAcc `0.004750` (**0.4750 điểm phần trăm**, 38 ảnh đúng thêm overall), nhưng giảm AUROC khoảng `0.000287`. Không có cấu hình tốt nhất ở mọi metric.
 9. Hai fusion cải thiện BAcc trên cả STARGAN và StableDiffusion_Inpainting so với baseline đối chiếu tương ứng. Tuy nhiên AUROC diffusion của các fusion vẫn thấp hơn Local-only/Global + Local. Net gain dương không có nghĩa không gây lỗi mới, và một seed/hai unseen generators chưa chứng minh cải thiện có ý nghĩa thống kê hay tổng quát cho mọi generator.
 
 ## 6. Shortcut diagnostic
@@ -315,11 +314,13 @@ Validation AUROC của shortcut không cao đến mức thay thế được mode
 
 ### 7.1. Baseline Global/Local
 
-Artifact baseline full run được ghi nhận ở môi trường của owner tại:
+Artifact baseline full run được tải từ Notebook 10 và được dùng làm input cho fusion seed 42. Bản compact evidence được giữ trong:
 
 ```text
-/tmp/aiface_phase_e_full.M74oba/FaceTrace/outputs/aiface_phase_e
+downloads/aiface-seed42-fusion/input_evidence/
 ```
+
+Full baseline artifact (gồm feature cache và classifier checkpoint) không được đóng gói lại trong ZIP fusion; cần giữ bản tải từ Kaggle riêng nếu muốn tái tạo feature extraction/validation.
 
 Các artifact chính:
 
@@ -360,7 +361,9 @@ Các entry point trong repository:
 
 ### 7.2. Artifact Forensic đã kiểm tra
 
-Nguồn kết quả: `D:/UNI_STUDY/AIO/AI_is_AI/facetrace_spectral_artifacts.zip` trên máy teammate; ZIP không được commit vào Git.
+Nguồn forensic seed 42 được giữ trong `input_evidence/forensic_only/` của
+`downloads/aiface-seed42-fusion/facetrace_fusion_artifacts.zip`; standalone ZIP
+gốc không được commit vào Git.
 
 - SHA256 ZIP: `62d02ff5b202b5679a60bbf7fb068e5d01a198a62d1cb5dd83fc4527b726f93b`.
 - Source commit của run: `187374ce70037afaa72eb7289f056d53c2117d8a`, `git_dirty: false`.
@@ -384,14 +387,15 @@ Các entry point Forensic/fusion: `notebooks/11_aiface_phase_e_spectral.ipynb`, 
 
 ### 7.3. Artifact fusion đã kiểm tra
 
-Nguồn kết quả: `D:/UNI_STUDY/AIO/AI_is_AI/facetrace_fusion_artifacts.zip`; ZIP giữ ngoài Git, không chứa lại dataset ảnh hay feature cache DINOv3 lớn.
+Nguồn kết quả seed 42: `downloads/aiface-seed42-fusion/facetrace_fusion_artifacts.zip`;
+ZIP giữ compact evidence, không chứa lại dataset ảnh hay feature cache DINOv3 lớn.
 
-- SHA256 ZIP: `4b399ca468566a62adb180a55af805e69fd58f9a05ec5248d299e3482810eca0`.
-- Source commit của notebook 12: `eda43be00bb7338b707074f17daa2cfba2cced1c`; device **CPU**.
-- Timestamp Local + Forensic: `2026-10-07T16:52:21.627061+00:00`; Global + Local + Forensic: `2026-10-07T16:52:21.846041+00:00`.
-- Input Forensic: `/kaggle/input/datasets/ntklinhfitus/facetrace-spectral-artifacts/forensic_only`.
-- Input baseline: `/kaggle/input/datasets/nguyentrann0703/phase-e-full-artifacts/aiface_phase_e_full_artifacts`.
-- SHA256 metadata baseline: `830e19046e93e3b829086964eb87291d458743121571bfee09f61aeaec741260`; metadata Forensic: `0d27a691f147b8ce45dbdee8781be1d37d0ba59f02ad1b0217b161c722ed8666`.
+- SHA256 ZIP: `8b62cec33274f6f0c7befb02f8e08d361b2d53f98b2bee0f957d5ed0df6e5aa7`.
+- Source commit của notebook 12: `0d67f1a57ac3cfbacf19ddd77069cca62d1a73f4`; device **CPU**.
+- Kaggle notebook: `nguyentrann0703/ai-face-phase-e-fusion-seed-42`, version `1`.
+- Input artifact dataset: `nguyentrann0703/aiface-phase-e-seed42-artifacts`.
+- Input Forensic/baseline được resolver tự tìm trong dataset artifact; không dùng path local.
+- Metadata baseline và Forensic có cùng seed `42`, fixed split và ba manifest checksum.
 - Environment: Python `3.13.15`, torch `2.11.0+cpu`, NumPy `2.1.3`, pandas `2.3.3`, scikit-learn `1.6.1`, PyYAML `6.0.3`; GPU `null`.
 - `input_tests.log`: 4/4 test pass; `fusion.log` xác nhận cả hai fusion hoàn tất.
 
@@ -423,7 +427,9 @@ Kiểm tra trực tiếp đã hoàn tất:
 - Metric: tính lại overall/macro và per-generator test cho sáu cấu hình; tính lại metric validation và chọn lại threshold cho hai fusion; các kết quả khớp JSON/CSV. Metric validation baseline được ghi từ JSON evidence, không claim đã chạy lại feature cache baseline ở local.
 - Rescue/harm: tính lại mọi nhóm overall/per-generator tại threshold validation và common `0.5`; `error_cases.csv` và count/net gain khớp. Net gain overall khớp chênh lệch số ảnh dự đoán đúng.
 
-Các Input artifact version và URL Saved Version notebook 11/12 chưa được lưu trong metadata; cần bổ sung khi bàn giao. Các checksum ZIP/metadata/source đã ghi là bằng chứng hiện có, không thay bằng URL hoặc version suy đoán.
+Các notebook 10/11 seed 42 vẫn cần bổ sung Saved Version URL/version cụ thể vào
+metadata nếu nhóm muốn provenance hoàn chỉnh ở cấp từng notebook. Checksum
+ZIP/metadata/source ở trên là bằng chứng đã kiểm tra, không thay bằng URL suy đoán.
 
 ## 8. Giới hạn
 
@@ -431,10 +437,10 @@ Các Input artifact version và URL Saved Version notebook 11/12 chưa được 
 - Real images trong pilot chỉ dùng `imdb_wiki`, nên có nguy cơ real-source shortcut.
 - Generator-disjointness được đảm bảo theo manifest; identity-disjointness chưa được chứng minh đầy đủ từ metadata.
 - Chỉ có hai unseen generators, nên chưa thể khái quát cho mọi GAN hoặc diffusion generator.
-- Seed 43/44 đã được chạy full và bổ sung ở mục 4.9; robustness, bootstrap confidence interval và validation-only model selection chưa chạy.
+- Seed 42/43/44 đã được chạy full và bổ sung ở mục 4.9; robustness, bootstrap confidence interval và validation-only model selection chưa chạy.
 - Hai fusion có Forensic và rescue/harm cho bằng chứng bổ sung trên pilot này, nhưng chỉ với equal-probability mean và threshold validation đã khóa; chưa đánh giá calibration hay weighted fusion.
 - Single-bin Forensic không có `subset_metadata.json`; metadata ghi rõ không biết original sampling seed và chưa đọc quality gate gốc. Manifest/class counts/generator mapping được xác minh, không được suy ra đã kiểm định toàn bộ quality gate gốc.
-- Checksum/ID giữa các nhánh đã được đối chiếu; URL Saved Version notebook 11/12 và version của hai dataset artifact Input vẫn cần bổ sung để hoàn thiện provenance.
+- Checksum/ID giữa các nhánh đã được đối chiếu; URL Saved Version của notebook 10/11 seed 42 và version input artifact baseline/forensic cần bổ sung đầy đủ khi bàn giao provenance.
 
 ## 9. Trạng thái hoàn thành
 
@@ -452,9 +458,9 @@ Các Input artifact version và URL Saved Version notebook 11/12 chưa được 
 
 ### Bước tiếp theo / provenance còn cần bổ sung
 
-- Hoàn tất xác minh lại seed 42 bằng Notebook 10/11/12 để đồng nhất provenance với seed 43/44.
+- Bổ sung URL/version Saved Version của Notebook 10/11 seed 42 vào metadata provenance.
 - Chạy robustness năm điều kiện, bootstrap confidence interval và validation-only model selection theo `docs/aiface-phase-f-plan.md`.
 - Bổ sung URL Saved Version và dataset artifact version cho từng seed khi hoàn tất Phase F.
 - Giữ full artifact baseline gốc để tái tạo validation từ feature cache/checkpoint; ZIP fusion hiện giữ compact evidence chứ không thay thế toàn bộ baseline Output.
 
-Kết luận ở thời điểm cập nhật: **Phase E seed 43/44 đã có đủ sáu cấu hình, metric và rescue/harm trên cùng test manifest; seed 42 đang được xác minh lại từ run gốc.** Trên seed 43/44, Local + Forensic có AUROC cao nhất trong các cấu hình fusion chính, còn Global + Local + Forensic có BAcc cao hơn. Đây là bằng chứng mô tả trên hai unseen generators, chưa phải bằng chứng có ý nghĩa thống kê hoặc tổng quát ngoài pilot; cần hoàn tất seed 42, robustness, bootstrap và model selection trước khi chốt model cuối.
+Kết luận ở thời điểm cập nhật: **Phase E seed 42, 43 và 44 đã có đủ sáu cấu hình, metric và rescue/harm trên cùng test manifest.** Trên ba seed, Local + Forensic giữ AUROC fusion cao nhất ở seed 42/43/44, còn Global + Local + Forensic giữ BAcc cao hơn. Đây là bằng chứng mô tả trên hai unseen generators, chưa phải bằng chứng có ý nghĩa thống kê hoặc tổng quát ngoài pilot; robustness, bootstrap và model selection vẫn cần hoàn tất trước khi chốt model cuối.
