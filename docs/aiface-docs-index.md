@@ -11,6 +11,7 @@
 - `aiface-audit.md`: audit annotation và chất lượng dữ liệu AI-Face.
 - `aiface-phase-abc-report.md`: báo cáo audit, subset và quality gate.
 - `aiface-phase-e-report.md`: kết quả Phase E seed 42/43/44, sáu cấu hình và rescue/harm.
+- `aiface-complete-results.md`: bảng số liệu đầy đủ Phase E/F, robustness, bootstrap CI và model selection để viết paper.
 - `aiface-spectral-kaggle-guide.md`: hướng dẫn chạy forensic spectral trên Kaggle.
 
 ## Quy ước sử dụng
