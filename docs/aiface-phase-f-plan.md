@@ -73,12 +73,19 @@ Không ghép branch khác seed, ví dụ Global seed 43 với Forensic seed 44.
 Fusion cũng chọn threshold riêng trên fused validation probabilities theo cùng quy
 tắc. Không chọn checkpoint, threshold hoặc công thức fusion bằng nhãn test.
 
-## 3. Seed 43 và 44
+## 3. Seed 42, 43 và 44
+
+Trạng thái live của các run, artifact đang tải và điều kiện xác minh được ghi ở
+`docs/aiface-async-status.md`. Không đánh dấu một seed hoàn tất chỉ dựa trên tên
+version Kaggle; phải đọc `run_metadata.json` trong output.
 
 ### 3.1. Ma trận chạy
 
 | Seed | Notebook | Nội dung | Output riêng |
 |---:|---|---|---|
+| 42 | `10_aiface_phase_e_baseline.ipynb` | Global + Local gốc | `outputs/aiface_phase_e/` |
+| 42 | `11_aiface_phase_e_spectral.ipynb` | Forensic-only gốc | `outputs/aiface_phase_e/` |
+| 42 | `12_aiface_phase_e_fusion.ipynb` | Ba late fusions gốc | `outputs/aiface_phase_e_fusion/` |
 | 43 | `10_aiface_phase_e_baseline.ipynb` | Global + Local | `outputs/aiface_phase_e_seed43_baseline/` |
 | 43 | `11_aiface_phase_e_spectral.ipynb` | Forensic-only | `outputs/aiface_phase_e_seed43_spectral/` |
 | 43 | `12_aiface_phase_e_fusion.ipynb` | Ba late fusions | `outputs/aiface_phase_e_seed43_fusion/` |
@@ -296,15 +303,12 @@ Không dùng lại runner Residual của Week 3 để chạy các bước này.
 
 ## 8. Thứ tự thực hiện
 
-1. Tạo config/output riêng cho seed 43 và chạy Notebook 10 full.
-2. Tạo config/output riêng cho seed 43 và chạy Notebook 11 full.
-3. Attach hai artifact cùng seed và chạy Notebook 12.
-4. Lặp lại bước 1–3 cho seed 44.
-5. Kiểm tra alignment và hoàn tất clean validation/test predictions.
-6. Chạy robustness trên test IDs cố định cho seed 42/43/44.
-7. Chạy bootstrap CI và paired deltas.
-8. Chọn model bằng validation mean/SD và ghi `model_selection.json`.
-9. Khóa configuration, cập nhật báo cáo và chỉ sau đó chốt test headline.
+1. Hoàn tất/xác minh bộ seed 42 bằng Notebook 10, 11 và 12.
+2. Kiểm tra alignment và hoàn tất clean validation/test predictions cho cả seed 42/43/44.
+3. Chạy robustness trên test IDs cố định cho seed 42/43/44.
+4. Chạy bootstrap CI và paired deltas.
+5. Chọn model bằng validation mean/SD và ghi `model_selection.json`.
+6. Khóa configuration, cập nhật báo cáo và chỉ sau đó chốt test headline.
 
 ### 8.1. Lệnh phân tích sau khi Kaggle đã lưu artifact
 
@@ -342,7 +346,7 @@ python scripts/select_aiface_model.py \
 
 ## 9. Definition of Done
 
-- [ ] Seed 43 và 44 có đủ ba branch checkpoint và sáu cấu hình output.
+- [ ] Seed 42, 43 và 44 có đủ ba branch checkpoint và sáu cấu hình output.
 - [ ] Mọi run dùng cùng `generator_disjoint_fixed_v1` và cùng test IDs.
 - [ ] Checkpoint/threshold được chọn từ validation.
 - [ ] Có đủ năm conditions clean/JPEG/resize/blur/center-crop.

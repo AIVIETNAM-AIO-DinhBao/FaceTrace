@@ -11,7 +11,8 @@ Trọng tâm đánh giá là **generalization sang nguồn/generator chưa xuấ
 - `src/`: module dữ liệu, model, training, evaluation và tiện ích.
 - `scripts/`: entry point chạy train/evaluate.
 - `outputs/`: nơi lưu checkpoint, feature và kết quả (không commit dữ liệu sinh ra).
-- `docs/week02.md`: mục tiêu và đầu ra tuần 2.
+- `docs/aiface-pilot-plan.md`: kế hoạch và protocol hiện tại của AI-Face pilot.
+- `docs/aiface-phase-e-report.md`: báo cáo kết quả Phase E.
 
 ## Bắt đầu
 
@@ -48,4 +49,3 @@ Thứ tự ưu tiên:
 ## Lưu ý dữ liệu và tái lập
 
 Không đưa dữ liệu khuôn mặt, checkpoint, feature cache hoặc kết quả lớn vào Git. Ghi lại seed, danh sách nguồn train/validation/test, phiên bản dữ liệu, model ID/checkpoint và cấu hình cho mỗi lần chạy. Không dùng nguồn test để chọn threshold hay tinh chỉnh cấu hình.
-

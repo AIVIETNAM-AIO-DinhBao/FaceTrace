@@ -1,8 +1,8 @@
 # Báo cáo Phase E — AI-Face Global/Local và Spectral Forensic
 
 **Ngày ghi nhận:** 2026-10-07
-**Ngày cập nhật:** 2026-10-08
-**Trạng thái:** Pilot Phase E seed 42 đã có đủ sáu cấu hình full, hai fusion có Forensic và rescue/harm. Seed 43/44, robustness, confidence interval và bổ sung provenance Saved Version vẫn là các bước tiếp theo.
+**Ngày cập nhật:** 2026-10-13
+**Trạng thái:** Phase E seed 43 và seed 44 đã được xác minh đủ sáu cấu hình; seed 42 là run gốc đang được chạy lại để hoàn tất provenance. Robustness, confidence interval và validation-only model selection thuộc Phase F và chưa chạy.
 
 **Cập nhật:** Đã kiểm tra trực tiếp cả `facetrace_spectral_artifacts.zip` và `facetrace_fusion_artifacts.zip`. ZIP fusion chứa prediction/metric baseline đầu vào; metric test của cả sáu cấu hình, threshold validation của hai fusion và rescue/harm đã được tính lại, khớp artifact. Manifest checksum, generator mapping, seed, image size và test ID/label/split giữa các nhánh đã được đối chiếu.
 
@@ -212,6 +212,76 @@ Net gain overall tương ứng tăng Accuracy/BAcc `416/8,000 = 0.052000` so v�
 
 Bảng này lấy từ `rescue_harm_fixed_0.5.csv`, chỉ là phân tích phụ. Các baseline có threshold validation rất xa 0.5, nên không thay các net gain chính `+416/+503` bằng `+809/+256` khi diễn giải metric ở mục 4.1/4.5.
 
+## 4.9. Multi-seed verification
+
+Seed 42 là run Phase E ban đầu và đang được chạy lại qua Notebook 10–12 để xác minh
+đầy đủ provenance. Các giá trị seed 42 bên dưới được giữ từ báo cáo hiện có và chỉ
+được thay khi run lại tạo ra thay đổi có ghi nhận. Giá trị seed 43 và seed 44 được
+đọc từ các fusion artifact đã xác minh tại `downloads/aiface-seed43-fusion/` và
+`downloads/aiface-seed44-fusion/`.
+
+Tất cả các hàng dùng cùng test manifest 8.000 ảnh và threshold được chọn trên
+validation.
+
+### 4.9.1. Macro metrics by seed
+
+| Model | Seed 42 AUROC | Seed 42 BAcc | Seed 43 AUROC | Seed 43 BAcc | Seed 44 AUROC | Seed 44 BAcc |
+|---|---:|---:|---:|---:|---:|---:|
+| Global-only | 0.939942 | 0.857625 | 0.928105 | 0.830875 | 0.937628 | 0.852625 |
+| Local-only | 0.959689 | 0.883625 | 0.957312 | 0.880750 | 0.953547 | 0.868250 |
+| Global + Local | 0.958677 | 0.877500 | 0.951657 | 0.869500 | 0.953908 | 0.869250 |
+| Forensic-only | 0.958515 | 0.898750 | 0.974958 | 0.928500 | 0.975703 | 0.929500 |
+| Local + Forensic | 0.981896 | 0.935625 | 0.987320 | 0.958375 | 0.988160 | 0.958875 |
+| Global + Local + Forensic | 0.981608 | 0.940375 | 0.985797 | 0.958625 | 0.987310 | 0.959750 |
+
+### 4.9.2. Mean and sample SD across seeds
+
+| Model | Macro AUROC mean +/- SD | Macro BAcc mean +/- SD |
+|---|---:|---:|
+| Global-only | 0.935225 +/- 0.006274 | 0.847042 +/- 0.014222 |
+| Local-only | 0.956849 +/- 0.003097 | 0.877542 +/- 0.008174 |
+| Global + Local | 0.954747 +/- 0.003584 | 0.872083 +/- 0.004693 |
+| Forensic-only | 0.969725 +/- 0.009716 | 0.918917 +/- 0.017472 |
+| Local + Forensic | 0.985792 +/- 0.003400 | 0.950958 +/- 0.013281 |
+| Global + Local + Forensic | 0.984905 +/- 0.002954 | 0.952917 +/- 0.010876 |
+
+### 4.9.3. Per-generator metrics — seed 43
+
+| Model | STARGAN AUROC | STARGAN BAcc | StableDiffusion_Inpainting AUROC | StableDiffusion_Inpainting BAcc |
+|---|---:|---:|---:|---:|
+| Global-only | 0.873294 | 0.732375 | 0.982917 | 0.929375 |
+| Local-only | 0.925301 | 0.826625 | 0.989322 | 0.934875 |
+| Global + Local | 0.912521 | 0.802625 | 0.990792 | 0.936375 |
+| Forensic-only | 0.983660 | 0.948875 | 0.966256 | 0.908125 |
+| Local + Forensic | 0.982966 | 0.956625 | 0.991674 | 0.960125 |
+| Global + Local + Forensic | 0.977917 | 0.952625 | 0.993678 | 0.964625 |
+
+### 4.9.4. Per-generator metrics — seed 44
+
+| Model | STARGAN AUROC | STARGAN BAcc | StableDiffusion_Inpainting AUROC | StableDiffusion_Inpainting BAcc |
+|---|---:|---:|---:|---:|
+| Global-only | 0.886377 | 0.779250 | 0.988878 | 0.926000 |
+| Local-only | 0.912989 | 0.805625 | 0.994105 | 0.930875 |
+| Global + Local | 0.912983 | 0.796000 | 0.994833 | 0.942500 |
+| Forensic-only | 0.980907 | 0.940500 | 0.970500 | 0.918500 |
+| Local + Forensic | 0.981576 | 0.948375 | 0.994744 | 0.969375 |
+| Global + Local + Forensic | 0.979193 | 0.947500 | 0.995427 | 0.972000 |
+
+### 4.9.5. Rescue/harm across verified seeds
+
+| Seed | Fusion | Rescue | Harm | Net gain |
+|---:|---|---:|---:|---:|
+| 42 | Local + Forensic | 798 | 382 | +416 |
+| 42 | Global + Local + Forensic | 806 | 303 | +503 |
+| 43 | Local + Forensic | 815 | 194 | +621 |
+| 43 | Global + Local + Forensic | 839 | 126 | +713 |
+| 44 | Local + Forensic | 936 | 211 | +725 |
+| 44 | Global + Local + Forensic | 902 | 178 | +724 |
+
+Các giá trị rescue/harm của seed 43 và 44 là bằng chứng mô tả trên pilot test
+manifest cố định. Đây không phải confidence interval và không chứng minh
+generalization sang generator ngoài `STARGAN` và `StableDiffusion_Inpainting`.
+
 ## 5. Diễn giải kết quả
 
 1. `Local-only` vẫn là baseline mạnh nhất theo macro AUROC (0.959689) và macro BAcc (0.883625) trong ba cấu hình Global/Local. Trong bốn cấu hình chưa fusion với Forensic, Local có AUROC cao nhất và Forensic có BAcc cao nhất; cả hai fusion có Forensic vượt các mốc này.
@@ -361,7 +431,7 @@ Các Input artifact version và URL Saved Version notebook 11/12 chưa được 
 - Real images trong pilot chỉ dùng `imdb_wiki`, nên có nguy cơ real-source shortcut.
 - Generator-disjointness được đảm bảo theo manifest; identity-disjointness chưa được chứng minh đầy đủ từ metadata.
 - Chỉ có hai unseen generators, nên chưa thể khái quát cho mọi GAN hoặc diffusion generator.
-- Chưa chạy seed 43/44, robustness hoặc confidence interval.
+- Seed 43/44 đã được chạy full và bổ sung ở mục 4.9; robustness, bootstrap confidence interval và validation-only model selection chưa chạy.
 - Hai fusion có Forensic và rescue/harm cho bằng chứng bổ sung trên pilot này, nhưng chỉ với equal-probability mean và threshold validation đã khóa; chưa đánh giá calibration hay weighted fusion.
 - Single-bin Forensic không có `subset_metadata.json`; metadata ghi rõ không biết original sampling seed và chưa đọc quality gate gốc. Manifest/class counts/generator mapping được xác minh, không được suy ra đã kiểm định toàn bộ quality gate gốc.
 - Checksum/ID giữa các nhánh đã được đối chiếu; URL Saved Version notebook 11/12 và version của hai dataset artifact Input vẫn cần bổ sung để hoàn thiện provenance.
@@ -382,8 +452,9 @@ Các Input artifact version và URL Saved Version notebook 11/12 chưa được 
 
 ### Bước tiếp theo / provenance còn cần bổ sung
 
-- Bổ sung URL Saved Version notebook 11/12 và version của các dataset artifact Input.
-- Seed 43/44, robustness và confidence interval; các mục này chưa được chạy trong pilot seed 42.
+- Hoàn tất xác minh lại seed 42 bằng Notebook 10/11/12 để đồng nhất provenance với seed 43/44.
+- Chạy robustness năm điều kiện, bootstrap confidence interval và validation-only model selection theo `docs/aiface-phase-f-plan.md`.
+- Bổ sung URL Saved Version và dataset artifact version cho từng seed khi hoàn tất Phase F.
 - Giữ full artifact baseline gốc để tái tạo validation từ feature cache/checkpoint; ZIP fusion hiện giữ compact evidence chứ không thay thế toàn bộ baseline Output.
 
-Kết luận ở thời điểm cập nhật: **Pilot Phase E seed 42 đã có đủ sáu cấu hình, metric và rescue/harm trên cùng test manifest; phần thực nghiệm Forensic/fusion của teammate đã hoàn tất.** Forensic bổ sung giá trị cho Global/Local trong run này: Local + Forensic có AUROC cao nhất; Global + Local + Forensic có BAcc/Accuracy/F1 cao nhất. Chưa kết luận có ý nghĩa thống kê hoặc tổng quát ngoài pilot; còn cần hoàn thiện provenance và các thí nghiệm multi-seed/robustness.
+Kết luận ở thời điểm cập nhật: **Phase E seed 43/44 đã có đủ sáu cấu hình, metric và rescue/harm trên cùng test manifest; seed 42 đang được xác minh lại từ run gốc.** Trên seed 43/44, Local + Forensic có AUROC cao nhất trong các cấu hình fusion chính, còn Global + Local + Forensic có BAcc cao hơn. Đây là bằng chứng mô tả trên hai unseen generators, chưa phải bằng chứng có ý nghĩa thống kê hoặc tổng quát ngoài pilot; cần hoàn tất seed 42, robustness, bootstrap và model selection trước khi chốt model cuối.
