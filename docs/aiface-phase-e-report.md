@@ -2,7 +2,7 @@
 
 **Ngày ghi nhận:** 2026-10-07
 **Ngày cập nhật:** 2026-10-13
-**Trạng thái:** Phase E seed 42, seed 43 và seed 44 đã được xác minh đủ sáu cấu hình; seed 42 được xác minh lại qua Notebook 10–12 với artifact provenance đầy đủ. Robustness, confidence interval và validation-only model selection thuộc Phase F và chưa chạy.
+**Trạng thái:** Phase E và Phase F seed 42, seed 43 và seed 44 đã được xác minh đủ sáu cấu hình; robustness, confidence interval và validation-only model selection đã hoàn tất.
 
 **Cập nhật:** Đã kiểm tra trực tiếp cả `facetrace_spectral_artifacts.zip` và `facetrace_fusion_artifacts.zip`. ZIP fusion chứa prediction/metric baseline đầu vào; metric test của cả sáu cấu hình, threshold validation của hai fusion và rescue/harm đã được tính lại, khớp artifact. Manifest checksum, generator mapping, seed, image size và test ID/label/split giữa các nhánh đã được đối chiếu.
 
@@ -31,9 +31,9 @@ Dataset Kaggle dùng trong run:
 nguyentrann0703/aiface-pilot-32k-single-bin
 ```
 
-Kaggle notebook:
+Kaggle notebook (URL notebook; version label ghi trong Kaggle UI):
 
-<https://www.kaggle.com/code/nguyentrann0703/ai-face-phase-e-global-local-baseline?scriptVersionId=356092097>
+<https://www.kaggle.com/code/nguyentrann0703/ai-face-phase-e-global-local-baseline>
 
 Metadata baseline đã được đối chiếu với `input_evidence/baseline_run_metadata.json` trong ZIP fusion:
 
@@ -357,7 +357,9 @@ Các entry point trong repository:
 - `notebooks/10_aiface_phase_e_baseline.ipynb`;
 - `src/evaluation/aiface_phase_e.py`.
 
-`run_metadata.json` của artifact chưa tự ghi Kaggle URL/run ID; provenance Kaggle được ghi thủ công trong mục 2 bằng URL notebook và script version ở trên.
+`run_metadata.json` của artifact chưa tự ghi Kaggle URL/run ID; provenance Kaggle
+được ghi thủ công bằng URL notebook, version label và ngày chạy. `scriptVersionId`
+không phải trường bắt buộc vì nhóm không duy trì ID version ổn định trong workflow.
 
 ### 7.2. Artifact Forensic đã kiểm tra
 
@@ -427,9 +429,9 @@ Kiểm tra trực tiếp đã hoàn tất:
 - Metric: tính lại overall/macro và per-generator test cho sáu cấu hình; tính lại metric validation và chọn lại threshold cho hai fusion; các kết quả khớp JSON/CSV. Metric validation baseline được ghi từ JSON evidence, không claim đã chạy lại feature cache baseline ở local.
 - Rescue/harm: tính lại mọi nhóm overall/per-generator tại threshold validation và common `0.5`; `error_cases.csv` và count/net gain khớp. Net gain overall khớp chênh lệch số ảnh dự đoán đúng.
 
-Các notebook 10/11 seed 42 vẫn cần bổ sung Saved Version URL/version cụ thể vào
-metadata nếu nhóm muốn provenance hoàn chỉnh ở cấp từng notebook. Checksum
-ZIP/metadata/source ở trên là bằng chứng đã kiểm tra, không thay bằng URL suy đoán.
+Nếu cần provenance chi tiết hơn, có thể bổ sung version label của từng notebook
+10/11/12; không suy đoán hoặc tự điền `scriptVersionId` khi không có trong log.
+Checksum ZIP/metadata/source ở trên là bằng chứng đã kiểm tra.
 
 ## 8. Phase F: robustness, bootstrap và model selection
 
@@ -482,7 +484,7 @@ degradation cần được báo cáo condition-by-condition thay vì gộp thàn
 - Seed 42/43/44 đã được chạy full; robustness, bootstrap confidence interval và validation-only model selection đã hoàn tất trong Phase F.
 - Hai fusion có Forensic và rescue/harm cho bằng chứng bổ sung trên pilot này, nhưng chỉ với equal-probability mean và threshold validation đã khóa; chưa đánh giá calibration hay weighted fusion.
 - Single-bin Forensic không có `subset_metadata.json`; metadata ghi rõ không biết original sampling seed và chưa đọc quality gate gốc. Manifest/class counts/generator mapping được xác minh, không được suy ra đã kiểm định toàn bộ quality gate gốc.
-- Checksum/ID giữa các nhánh đã được đối chiếu; URL Saved Version của notebook 10/11 seed 42 và version input artifact baseline/forensic cần bổ sung đầy đủ khi bàn giao provenance.
+- Checksum/ID giữa các nhánh đã được đối chiếu; provenance Kaggle còn thiếu một số version label chi tiết nhưng không ảnh hưởng đến kết quả hay khả năng tái lập bằng artifact.
 
 ## 10. Trạng thái hoàn thành
 
@@ -498,10 +500,9 @@ degradation cần được báo cáo condition-by-condition thay vì gộp thàn
 - Metric overall, metric theo từng unseen generator, prediction và checkpoint.
 - Shortcut diagnostic trên train/validation.
 
-### Bước tiếp theo / provenance còn cần bổ sung
+### Bước tùy chọn / provenance
 
-- Bổ sung URL/version Saved Version của Notebook 10/11 seed 42 vào metadata provenance.
-- Bổ sung URL Saved Version và dataset artifact version cho từng seed khi hoàn tất Phase F.
+- Nếu nhóm muốn hồ sơ provenance đẹp hơn, ghi URL notebook + version label + ngày chạy cho từng seed; không cần `scriptVersionId`.
 - Giữ full artifact baseline gốc để tái tạo validation từ feature cache/checkpoint; ZIP fusion hiện giữ compact evidence chứ không thay thế toàn bộ baseline Output.
 
 Kết luận ở thời điểm cập nhật: **Phase E và Phase F đã hoàn tất trên pilot AI-Face.**
