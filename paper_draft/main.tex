@@ -4,7 +4,7 @@
 \usepackage[utf8]{vietnam}
 \usepackage[vietnamese=nohyphenation]{hyphsubst}
 \usepackage[english,vietnamese]{babel}
-\usepackage[T1]{fontenc}
+\usepackage[T1,T5]{fontenc}
 \usepackage{lmodern,mathrsfs}
 \usepackage[table,dvipsnames]{xcolor}
 \usepackage{booktabs}
@@ -57,8 +57,11 @@
     hyperref=false
 ]{biblatex}
 \addbibresource{references.bib}
+\DeclareLanguageMapping{vietnamese}{english}
+\setcounter{biburlucpenalty}{100}
+\setcounter{biburllcpenalty}{100}
 \DefineBibliographyStrings{english}{andothers = {et\addabbrvspace al\adddot}}
-\AtBeginBibliography{\selectlanguage{english}}
+\AtBeginBibliography{\selectlanguage{english}\fontencoding{T5}\selectfont}
 \renewcommand{\appendixtocname}{Phụ lục}
 \renewcommand{\appendixpagename}{Phụ lục}
 
@@ -123,7 +126,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \lhead{\textcolor{aivnGreen}{\bfseries FaceTrace}}
-\rhead{\textcolor{aivnGreen}{AIO 2026 -- Báo cáo cuối kỳ}}
+\rhead{{\fontencoding{T5}\selectfont\textcolor{aivnGreen}{AIO 2026 -- Báo cáo cuối kỳ}}}
 \fancyfoot[r]{\textcolor{aivnGreen}{\bfseries Trang \thepage}}
 \renewcommand{\headrulewidth}{1pt}
 \renewcommand{\headrule}{{\color{aivnGreen}\hrule width\headwidth height\headrulewidth \vskip-\headrulewidth}}

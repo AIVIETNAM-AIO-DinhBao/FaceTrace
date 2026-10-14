@@ -28,5 +28,9 @@ Mỗi generator row có 6.000 ảnh; cộng hai dòng không tạo test độc l
 
 Báo cáo ghi manifest checksum trùng qua ba seed. Metadata cần giữ gồm seed, source mapping, checksum, resolved config, device, checkpoint policy, threshold và prediction theo ID. Bootstrap chỉ đọc prediction đã lưu; smoke metric không là kết quả nghiên cứu.
 
-Checkout hiện chưa chứa prediction/checkpoint Phase E/F đầy đủ; bản thảo dùng số liệu đã ghi trong báo cáo, chưa tính lại từ prediction gốc.
-\todo{Bổ sung archive và hồ sơ chạy; xác nhận bảng bài nộp khớp artifact của nhóm.}
+Checkout hiện chưa chứa đầy đủ prediction và checkpoint Phase E/F. Các bảng clean, robustness và khoảng tin cậy đã được đối chiếu với \texttt{docs/aiface-complete-results.md}. Bảng mean theo generator được tính lại từ các dòng sáu chữ số trong báo cáo đó.
+
+Hai gói \texttt{facetrace\_spectral\_artifacts.zip} và \texttt{facetrace\_fusion\_artifacts.zip} chứa các lần chạy seed 42 ngày 07/10/2026, trước Phase F. Gói spectral giữ checkpoint, prediction validation/test và file môi trường. Gói fusion giữ prediction test của sáu cấu hình và prediction validation của hai fusion. Tính lại metric test, công thức fusion và rescue/harm từ CSV trong các gói này khớp kết quả lưu cùng ZIP.
+
+Các ZIP cũ không trùng hoàn toàn số Phase F. Chẳng hạn, Forensic-only seed 42 trong ZIP cũ có AUROC 0.958515 và BAcc 0.898750, còn báo cáo Phase F ghi 0.958504 và 0.898875. Bản thảo giữ số Phase F để thống nhất qua ba seed. Những kiểm tra trên ZIP cũ không được xem là xác minh prediction gốc của toàn bộ bảng cuối.
+\todo{Bổ sung artifact Phase F seed 42/43/44 cùng output bootstrap và model selection, rồi đối chiếu bảng cuối với prediction của chính bộ artifact đó.}

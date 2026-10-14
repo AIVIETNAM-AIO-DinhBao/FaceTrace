@@ -36,5 +36,7 @@ Rescue là baseline sai, fusion đúng; harm là baseline đúng, fusion sai. Ne
 \subsection{Shortcut và môi trường chạy}
 Shortcut diagnostic seed 42 dùng logistic regression fit trên train: một cấu hình chỉ dùng file size, cấu hình khác thêm luminance mean/std, saturation, gray-pixel fraction và edge. Đánh giá trên validation và không dùng để lựa chọn model theo test.
 
-Phase F ghi seed 42/43 dùng MPS, seed 44 CUDA. Khác biệt backend có thể góp phần vào SD; manifest checksum trùng chỉ xác nhận dữ liệu không đổi.
-\todo{Bổ sung hoặc xác nhận thiết bị từng giai đoạn, phiên bản thư viện, thời gian chạy và bộ nhớ từ metadata/log của nhóm.}
+Metadata baseline seed 42 ghi backend CUDA. File môi trường trong ZIP forensic seed 42 ghi GPU Tesla T4, Python 3.13.15, PyTorch 2.11.0+cu128, torchvision 0.26.0+cu128, NumPy 2.1.3, pandas 2.3.3, Pillow 12.3.0 và scikit-learn 1.6.1. Fusion seed 42 ngày 07/10 trong ZIP chạy CPU với Python 3.13.15 và PyTorch 2.11.0+cpu. Những phiên bản này chỉ mô tả các lần chạy có file môi trường đã đối chiếu.
+
+Báo cáo Phase F ghi backend suy luận MPS cho seed 42/43 và CUDA cho seed 44. Thông tin này không xác định thiết bị huấn luyện của từng seed. Khác biệt backend có thể góp phần vào chênh lệch score khi suy luận. Các ZIP seed 42 cũ cũng khác nhẹ về score và threshold so với bộ kết quả Phase F, nên bảng cuối dùng thống nhất số Phase F. Hồ sơ hiện có chưa đủ để xác định toàn bộ nguyên nhân của chênh lệch.
+\todo{Bổ sung file môi trường của baseline seed 42, các lần train seed 43/44 và Phase F, gồm model revision DINOv3, phiên bản transformers, thời gian chạy và bộ nhớ đo được.}

@@ -5,8 +5,9 @@ Một pilot, một fixed split và hai generator test giới hạn phạm vi k�
 Real chỉ từ \texttt{imdb\_wiki}; identity hints giao giữa split. Hash audit chưa bao phủ near-duplicate, cùng nội dung sau xử lý hoặc identity thật. Generator-disjoint không bảo đảm đã kiểm soát toàn bộ leakage. Nhóm source GANs/DMs cũng không thay thế taxonomy thao tác; báo cáo giữ nghĩa nhãn dataset.
 
 \subsection{Chronology và bất định}
-Tài liệu tổng kết ghi test đã được xem khi phát triển. Dù ranking code chỉ dùng validation, chưa có bằng chứng toàn bộ lựa chọn nghiên cứu được khóa trước lần đầu xem test. Nghiên cứu được trình bày như pilot khám phá.
-\todo{Nhóm xác nhận chronology; nếu có hồ sơ khác, bổ sung mốc chốt phương pháp/checkpoint/threshold và thời điểm xem test.}
+Tài liệu tổng kết ghi test đã được xem khi phát triển. Metadata seed 42 mang timestamp ngày 07/10/2026 lúc 23:05 cho forensic và 23:52 cho fusion, theo UTC+7. Báo cáo seed 42 đủ sáu cấu hình được commit ngày 08/10, trước các cập nhật Phase F ngày 13/10. Timestamp metadata không xác định thời điểm người thực hiện xem test hoặc khóa toàn bộ thiết kế nghiên cứu.
+
+Mã huấn luyện chọn checkpoint và threshold từ validation trước khi tính metric test của từng lần chạy. Mã xếp hạng cấu hình cũng chỉ dùng validation. Tuy nhiên, hồ sơ không có mốc khóa toàn bộ phương pháp trước lần đầu xem test. Vì vậy, nghiên cứu được trình bày như một pilot khám phá, không phải đánh giá test mù đã đăng ký trước.
 
 Bootstrap theo ảnh chưa xử lý identity cluster hoặc generator population; chưa hiệu chỉnh multiple comparisons và chỉ có CI cho các cặp đã thực hiện. Khác biệt backend còn có thể góp phần vào SD qua seed.
 

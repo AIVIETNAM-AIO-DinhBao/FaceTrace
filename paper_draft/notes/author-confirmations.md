@@ -1,16 +1,18 @@
 # Các thông tin còn cần nhóm xác nhận
 
-Ngôn ngữ, mục đích học phần, cách gọi nhãn và danh sách tác giả đã được chốt. Các mục còn lại xuất hiện dưới dạng TODO đỏ trong LaTeX:
+Đã bổ sung thông tin có bằng chứng từ repo và hai ZIP seed 42 đang có trên local. Bản thảo còn bốn TODO đỏ:
 
 | Thông tin | File |
 |---|---|
-| Vai trò thực tế của Đinh Bảo Bảo, Nguyễn Thị Khánh Linh và Trần Tất Nguyên | sections/disclosures.tex |
-| Nguồn tải, phiên bản dữ liệu/annotation và điều kiện sử dụng | sections/problem_and_data.tex; sections/disclosures.tex |
-| Thiết bị từng giai đoạn, phiên bản thư viện, thời gian và bộ nhớ | sections/experimental_setup.tex |
-| Mốc khóa phương pháp/checkpoint/threshold và thời điểm xem test | sections/limitations.tex |
-| Liên kết nộp mã, artifact, notebook/run versions; đối chiếu bảng với prediction gốc | sections/disclosures.tex; appendices/protocol.tex |
-| Mã nhóm/lớp, giảng viên nếu hướng dẫn nộp yêu cầu | sections/disclosures.tex |
+| File môi trường của baseline seed 42, các lần train seed 43/44 và Phase F. Cần model revision DINOv3, transformers, thời gian chạy và bộ nhớ đo được | sections/experimental_setup.tex |
+| Liên kết lưu artifact Phase F và version của các lần chạy chưa được ghi. URL notebook không xác định một lần chạy cụ thể | sections/disclosures.tex |
+| Mã nhóm, lớp và giảng viên, chỉ khi hướng dẫn nộp yêu cầu | sections/disclosures.tex |
+| Bộ prediction/checkpoint Phase F seed 42/43/44, output bootstrap và model selection để đối chiếu bảng cuối từ dữ liệu gốc | appendices/protocol.tex |
 
-Các TODO này yêu cầu dữ kiện của nhóm. Những câu hỏi khoa học chưa được thực nghiệm như G+F, LoRA hoặc nhiều dataset được trình bày trong giới hạn/hướng phát triển, không để thành TODO phải thực hiện trước khi nộp pilot hiện tại.
+Những mục này cần hồ sơ của nhóm, không thể điền bằng cấu hình mặc định hoặc suy từ backend. G+F, LoRA và đánh giá nhiều dataset vẫn thuộc hướng phát triển, không phải thí nghiệm đã thực hiện.
 
-Nếu thêm montage ảnh mặt, cần nguồn ảnh và xác nhận quyền chia sẻ. Bản hiện tại chỉ có sơ đồ và biểu đồ định lượng.
+Đóng góp thành viên đã được ghi theo lịch sử commit, không suy thêm vai trò ngoài repo. AI-Face v2 và annotation được xác định từ báo cáo audit. Dataset pilot trên Kaggle là version 1 theo metadata seed 42, khác với version của AI-Face gốc.
+
+Nguồn chính thức đã được kiểm tra ngày 14/10/2026: repo AI-Face công bố CC BY-NC-ND 4.0, còn IMDB-WIKI giới hạn mục đích nghiên cứu học thuật. Hồ sơ chưa lưu hash annotation gốc hoặc xác nhận quyền tái phân phối pilot. Bản hiện tại không có ảnh mặt minh họa và không tuyên bố nhóm đã được cấp quyền phân phối.
+
+Chronology được ghi theo timestamp metadata và ngày commit. Không có bằng chứng về thời điểm khóa toàn bộ phương pháp trước lần đầu xem test, nên bản thảo giữ cách diễn giải pilot khám phá.

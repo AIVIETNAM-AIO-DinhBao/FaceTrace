@@ -18,10 +18,18 @@ Nhập toàn bộ thư mục paper_draft làm project và dùng main.tex làm fi
 
 Bản thảo dùng docs/aiface-complete-results.md và docs/aiface-end-to-end-report.md của repo làm nguồn số liệu. Bảng generator mean được tính từ các số sáu chữ số hiển thị trong báo cáo; sơ đồ/biểu đồ không bổ sung lần chạy mới. notes/evidence-map.md ghi rõ phạm vi này.
 
-Checkout hiện chưa chứa toàn bộ prediction CSV/checkpoint Phase E/F. Việc viết bản thảo không đồng nghĩa đã tính lại mọi metric từ prediction gốc. Các chỗ cần bổ sung artifact và provenance được đánh dấu đỏ.
+Các bảng đã được đối chiếu với báo cáo tổng hợp Phase F. Hai ZIP seed 42 cũ ở thư mục cha của repo cũng đã được kiểm tra từ prediction gốc. Các ZIP này khác nhẹ số Phase F và không thay thế bộ artifact cuối của ba seed. Chi tiết kiểm tra và nguồn của từng phần được ghi trong notes/evidence-map.md.
+
+Đã bổ sung AI-Face v2 và annotation, version gói pilot, điều kiện sử dụng dữ liệu, đóng góp theo lịch sử commit, môi trường seed 42, các mốc hồ sơ và liên kết mã/notebook đã được ghi. Bốn TODO còn lại cần file môi trường các run khác, liên kết/version artifact cuối, đối chiếu prediction Phase F và thông tin lớp/giảng viên nếu được yêu cầu. Không điền thời gian chạy, bộ nhớ hay mốc khóa phương pháp khi chưa có hồ sơ.
 
 ## Biên dịch
 
 Template dùng pdfLaTeX và biblatex với backend BibTeX. Khi build local, chạy pdfLaTeX, BibTeX, rồi pdfLaTeX hai lần; nếu dùng latexmk có thể để công cụ điều phối các lượt. Các package tiếng Việt và package đồ họa của template cần có trong TeX distribution.
 
-Môi trường soạn hiện chưa có pdflatex/latexmk/bibtex/tectonic nên chưa tạo PDF để kiểm tra dàn trang. Đường dẫn input, citation keys và dữ liệu bảng được kiểm tra ở mức source.
+Lần rà ngày 14/10/2026 dùng TeX Live 2026 để biên dịch bằng pdfLaTeX và BibTeX. Đã sửa font T5 cho tiếng Việt trong phần tài liệu tham khảo và header, cùng chỗ ngắt dòng tên generator dài. Chạy từ paper_draft:
+
+```powershell
+latexmk -pdf -interaction=nonstopmode -halt-on-error "-outdir=../outputs/paper_draft" main.tex
+```
+
+PDF được tạo ở outputs/paper_draft/main.pdf, ngoài thư mục nguồn và không được Git track. Bản này vẫn hiển thị bốn TODO cần hồ sơ nhóm, chưa phải bản đã xóa hết đánh dấu để nộp.

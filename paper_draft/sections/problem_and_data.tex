@@ -7,7 +7,7 @@ Gọi $\mathcal G_{\mathrm{tr}}$, $\mathcal G_{\mathrm{val}}$, $\mathcal G_{\mat
 \subsection{Nguồn và split cố định}
 AI-Face là nguồn chính \cite{Lin_2025_CVPR}. Audit local ghi nhận 1.646.545 dòng annotation gộp từ train/test gốc; đây không phải số ảnh huấn luyện pilot. Các source được chọn đều có mặt trong cả hai split gốc, nên dùng nguyên split không đáp ứng mục tiêu generator holdout.
 
-Pilot lấy mẫu với seed 42: 16.000 ảnh thật từ \texttt{imdb\_wiki} và 16.000 ảnh AI từ tám source, mỗi source 2.000 ảnh. Gói runtime được báo cáo là \texttt{nguyentrann0703/aiface-pilot-32k-single-bin}, version 1. Seed huấn luyện 43/44 không lấy mẫu lại dữ liệu.
+Pilot lấy mẫu với seed 42: 16.000 ảnh thật từ \texttt{imdb\_wiki} và 16.000 ảnh AI từ tám source, mỗi source 2.000 ảnh. Gói chạy trên Kaggle là \href{https://www.kaggle.com/datasets/nguyentrann0703/aiface-pilot-32k-single-bin}{\texttt{aiface-pilot-32k-single-bin}} của tài khoản \texttt{nguyentrann0703}, version 1 theo metadata forensic seed 42. Đây là phiên bản gói pilot, không phải phiên bản của AI-Face gốc. Seed huấn luyện 43/44 không lấy mẫu lại dữ liệu.
 
 \begin{table}[H]
 \centering
@@ -24,4 +24,4 @@ Hash duy nhất chỉ loại duplicate byte chính xác. Audit filename tạo id
 
 \subsection{Phạm vi và điều kiện dữ liệu}
 Cân bằng hai lớp không loại trừ source shortcut do nén, resolution hoặc crop. Subset deepfake-video không nằm trong main experiment; các source editing/inpainting được giữ theo nhãn dataset. Nghiên cứu chưa đánh giá demographic fairness.
-\todo{Xác nhận AI-Face v2/annotation đã dùng, nguồn tải và điều kiện sử dụng trong báo cáo học phần; bổ sung hồ sơ hoặc liên kết dữ liệu của nhóm.}
+Hồ sơ audit ngày 07/10/2026 xác định dữ liệu gốc là AI-Face v2, với annotation \texttt{AI\_Face\_annotationsV2/train\_data.csv} và \texttt{test\_data.csv}. Các archive đã kiểm tra gồm hai gói OneDrive và \texttt{imdb\_wiki.zip}. Repo chính thức của AI-Face cung cấp liên kết ảnh và annotation \cite{AI_Face_Repository}. Hồ sơ hiện có chưa lưu mã phiên bản hoặc hash của annotation gốc. Metadata gói forensic xác nhận split và số ảnh pilot nhưng không kèm metadata audit gốc, nên số liệu quality gate ở trên được dẫn từ báo cáo audit của nhóm. Điều kiện sử dụng dữ liệu được ghi ở phần thông tin nhóm.

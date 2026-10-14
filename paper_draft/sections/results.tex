@@ -23,7 +23,7 @@ L+F có mean AUROC cao nhất 0.985791, tăng 0.028942 so với L; BAcc tăng 0.
 CI của L+F trừ L và G+L+F trừ G+L đều nằm trên 0 ở cả ba seed. Kết quả hỗ trợ clean gain trên test/checkpoint cố định; không chuyển thành claim trên mọi generator chưa gặp.
 
 \subsection{Khác biệt theo generator}
-Bảng~\ref{tab:per-generator} cho thấy L có mean AUROC 0.921183 trên STARGAN và 0.992515 trên StableDiffusion\_Inpainting. G cũng khó hơn trên STARGAN. F có xu hướng ngược lại: STARGAN 0.976590, SD Inpainting 0.962854.
+Bảng~\ref{tab:per-generator} cho thấy L có mean AUROC 0.921183 trên STARGAN và 0.992515 trên StableDiffusion\_\allowbreak Inpainting. G cũng khó hơn trên STARGAN. F có xu hướng ngược lại: STARGAN 0.976590, SD Inpainting 0.962854.
 
 Khi ghép L+F, STARGAN tăng AUROC lên 0.979669; SD Inpainting đạt 0.991914, thấp hơn nhẹ L. Tuy vậy, BAcc của L+F tăng ở cả hai source. Vì vậy, macro gain không đồng nghĩa mọi source và mọi metric đều cải thiện. Khác biệt quan sát được chưa giải thích source nào để lại artifact vật lý gì.
 
