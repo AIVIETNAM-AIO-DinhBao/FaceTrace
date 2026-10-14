@@ -1,0 +1,39 @@
+\section{Nghiên cứu liên quan}
+\subsection{Tổng quát hóa giữa các mô hình sinh ảnh}
+Wang và cộng sự nghiên cứu detector huấn luyện trên ProGAN và kiểm thử trên nhiều hệ thống CNN, nhấn mạnh preprocessing và augmentation trong chuyển giao \cite{Wang_2020_CVPR}. Điều này gợi ý rằng quy trình xử lý ảnh phải được báo cáo cùng metric, thay vì quy toàn bộ hiệu năng cho kiến trúc classifier.
+
+Ojha và cộng sự khảo sát nearest-neighbor classification và linear probing trên đặc trưng thị giác--ngôn ngữ pretrained để nhận diện ảnh từ họ generator mới \cite{Ojha_2023_CVPR}. FaceTrace tiếp cận câu hỏi chuyển giao ở cấp representation, nhưng dùng DINOv3 đóng băng và MLP trong miền khuôn mặt. Do backbone, dữ liệu và protocol khác nhau, các metric không hỗ trợ so sánh trực tiếp ưu thế giữa hai nghiên cứu.
+
+\subsection{Dấu vết trong miền tần số}
+Frank và cộng sự phân tích artifact tần số của ảnh GAN và khai thác frequency representation để nhận diện ảnh giả \cite{Frank_2020_ICML}. Durall và cộng sự khảo sát khác biệt phân bố phổ liên quan đến upsampling, đồng thời nghiên cứu điều chỉnh phổ trong quá trình sinh ảnh \cite{Durall_2020_CVPR}. Đây là cơ sở động lực cho nhánh forensic của FaceTrace.
+
+Nhánh F dùng log-magnitude FFT theo RGB và trung bình theo bán kính. Representation gọn này bỏ phase, hướng và vị trí, nên bằng chứng về artifact trong công trình trước không tự bảo đảm radial feature sẽ chuyển giao tốt hoặc bền trước nén ảnh. FaceTrace đánh giá các thuộc tính đó bằng nhánh độc lập và fusion; phương pháp không được mô tả như reproduction trực tiếp của các công trình trên.
+
+\subsection{Kết hợp thông tin ngữ nghĩa và mức thấp}
+AIDE kết hợp đặc trưng ngữ nghĩa CLIP với đặc trưng mức thấp từ patch được chọn theo tần số cao/thấp, và đánh giá trên benchmark chứa ảnh sinh khó nhận diện \cite{AIDE_2025_ICLR}. FaceTrace dùng phép kết hợp đơn giản hơn: trung bình toàn bộ patch DINOv3 và thống kê radial FFT toàn ảnh. AIDE được sử dụng để định vị câu hỏi về tính bổ trợ; không được triển khai hoặc so sánh bằng chạy trực tiếp trong pilot.
+
+\subsection{DINOv3 và AI-Face}
+DINOv3 cung cấp biểu diễn thị giác tự giám sát, bao gồm đặc trưng dày đặc dùng được cho nhiều tác vụ \cite{DINOv3_2025}. FaceTrace truy xuất CLS và spatial patch tokens để giữ backbone cố định trong ablation. Thiết kế này không chứng minh global chỉ chứa ngữ nghĩa hoặc patch chỉ chứa forensic artifact.
+
+AI-Face được xây dựng cho nghiên cứu phát hiện khuôn mặt AI và fairness, với nhiều loại source cùng annotation nhân khẩu học \cite{Lin_2025_CVPR}. FaceTrace chỉ chọn một subset cho generator holdout và chưa đánh giá fairness. Cách chia lại theo source cũng khác việc dùng nguyên split annotation gốc.
+
+\subsection{Định vị nghiên cứu}
+\begin{table}[H]
+\centering
+\caption{Các hướng nghiên cứu làm cơ sở cho FaceTrace.}
+\label{tab:related-work}
+\small
+\begin{tabularx}{\linewidth}{p{.22\linewidth}XX}
+\toprule
+Công trình & Trọng tâm & Liên hệ với FaceTrace \\
+\midrule
+Wang \cite{Wang_2020_CVPR} & Chuyển giao giữa hệ thống sinh CNN & Generator chưa gặp và preprocessing \\
+Ojha \cite{Ojha_2023_CVPR} & Đặc trưng pretrained & Baseline với backbone đóng băng \\
+Frank; Durall \cite{Frank_2020_ICML,Durall_2020_CVPR} & Artifact và phân bố phổ & Nhánh phổ độc lập và hậu xử lý \\
+AIDE \cite{AIDE_2025_ICLR} & Ngữ nghĩa và mức thấp & Câu hỏi về bổ trợ giữa representation \\
+DINOv3 \cite{DINOv3_2025} & Biểu diễn tự giám sát & CLS và patch trên cùng backbone \\
+AI-Face \cite{Lin_2025_CVPR} & Dữ liệu khuôn mặt đa nguồn & Nguồn dựng pilot theo generator \\
+\bottomrule
+\end{tabularx}
+\end{table}
+Nghiên cứu tập trung vào so sánh trong cùng pilot. Các công trình khác cung cấp động lực và thiết kế tham khảo; kết quả từ benchmark khác không được dùng làm bảng xếp hạng với FaceTrace.

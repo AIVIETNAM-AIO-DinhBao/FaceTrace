@@ -1,0 +1,22 @@
+\section{Thảo luận}
+\subsection{Đóng góp của representation}
+L vượt G trên clean test cả ba seed, cho thấy mean-pooled patch là baseline hiệu quả hơn CLS-only trong pilot. Giữ backbone và classifier tương ứng hỗ trợ liên hệ chênh lệch với representation; tuy nhiên chưa có paired CI cho L trừ G và không có localization supervision.
+
+L+F và G+L+F có paired clean AUROC gain với CI dương. Rescue lớn hơn harm cũng cho thấy sửa được nhiều lỗi hơn số lỗi mới ở threshold đã chọn. Đây là bằng chứng bổ trợ ở dự đoán, chưa chứng minh representation độc lập hoặc một fingerprint vật lý bất biến theo generator.
+
+Lợi ích không tăng đơn điệu theo số nhánh. G+L có mean clean AUROC/BAcc thấp hơn L; G+L+F có AUROC thấp hơn L+F nhưng BAcc cao hơn. Thêm G có thể tác động khác nhau tới thứ tự score và quyết định tại threshold. Việc thêm representation cần đánh giá bằng ablation phù hợp.
+
+\subsection{Biến đổi ảnh và threshold}
+JPEG/blur làm F và fusion có F suy giảm rõ rệt về AUROC. Hành vi này tương thích với độ nhạy của thống kê phổ đối với hậu xử lý, nhưng chưa có attribution hoặc phân tích từng feature để quy nguyên nhân cho artifact cụ thể.
+
+Resize cho G+L+F BAcc gần G+L nhưng AUROC thấp hơn. Crop cho G+L+F AUROC cao nhất; L+F AUROC thấp hơn L nhưng BAcc cao hơn. Vì vậy cần báo cáo cả metric ranking và metric threshold. Blur làm fusion ba nhánh AUROC còn 0.873441 nhưng BAcc chỉ 0.572750: score vẫn phân biệt được phần nào nhưng threshold validation sạch không chuyển giao tốt.
+
+Kết quả ủng hộ bổ trợ trên clean pilot, chưa ủng hộ lợi ích chung dưới mọi corruption. Calibration, fusion có trọng số và augmentation là hướng kiểm chứng tiếp theo; hiệu quả chưa được đo ở đây.
+
+\subsection{Source và shortcut}
+Hai nhánh DINOv3 và F có mức độ khó khác nhau theo source. Fusion có thể tốt trên metric gộp nhưng giảm một metric của một source; các dòng source dùng chung real nên không là test độc lập.
+
+Validation AUROC trên mức ngẫu nhiên của shortcut diagnostic cho thấy tín hiệu từ feature đơn giản vẫn tồn tại. Logistic regression thấp hơn neural model không chứng minh shortcut đã bị loại bỏ và không đo được tỷ lệ hiệu năng do source confounding. Nhiều nguồn real và preprocessing được kiểm soát sẽ giúp phân tích mạnh hơn.
+
+\subsection{Trả lời câu hỏi nghiên cứu}
+Local cải thiện mô tả so với global trên clean; spectral bổ sung cho L và G+L trên clean với paired evidence; thêm nhánh không cải thiện thống nhất mọi metric; robustness phụ thuộc corruption. LoRA, G+F và chuyển giao dataset khác vẫn là câu hỏi mở, không phải kết quả đã có.

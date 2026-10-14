@@ -1,0 +1,16 @@
+\section{Giới hạn và hướng phát triển}
+\subsection{Phạm vi dữ liệu}
+Một pilot, một fixed split và hai generator test giới hạn phạm vi kết luận. Ba seed không mở rộng số dataset/generator. Một cường độ mỗi corruption cũng chưa mô tả độ nhạy trên nhiều mức nén hay blur.
+
+Real chỉ từ \texttt{imdb\_wiki}; identity hints giao giữa split. Hash audit chưa bao phủ near-duplicate, cùng nội dung sau xử lý hoặc identity thật. Generator-disjoint không bảo đảm đã kiểm soát toàn bộ leakage. Nhóm source GANs/DMs cũng không thay thế taxonomy thao tác; báo cáo giữ nghĩa nhãn dataset.
+
+\subsection{Chronology và bất định}
+Tài liệu tổng kết ghi test đã được xem khi phát triển. Dù ranking code chỉ dùng validation, chưa có bằng chứng toàn bộ lựa chọn nghiên cứu được khóa trước lần đầu xem test. Nghiên cứu được trình bày như pilot khám phá.
+\todo{Nhóm xác nhận chronology; nếu có hồ sơ khác, bổ sung mốc chốt phương pháp/checkpoint/threshold và thời điểm xem test.}
+
+Bootstrap theo ảnh chưa xử lý identity cluster hoặc generator population; chưa hiệu chỉnh multiple comparisons và chỉ có CI cho các cặp đã thực hiện. Khác biệt backend còn có thể góp phần vào SD qua seed.
+
+\subsection{Phương pháp và bước tiếp theo}
+Fusion chưa calibration hoặc so sánh weighted/learned fusion. Chưa có G+F, LoRA, nhiều holdout split, external test hay attribution. Pretraining exposure của DINOv3 chưa được audit; unseen chỉ nói tới supervised branch training.
+
+Hướng phát triển ưu tiên là nhiều nguồn real, kiểm tra identity/near-duplicate, đánh giá thêm generator/dataset và nhiều mức corruption. G+F giúp hoàn thiện ablation; calibration và weighted fusion giúp khảo sát score sau hậu xử lý. Phân tích định tính cần ảnh gốc và bằng chứng phù hợp trước khi giải thích cơ chế.

@@ -1,0 +1,158 @@
+\documentclass[12pt]{article}
+
+% Core packages and typography adapted from AIO2026_Template/Module-01/Tools.
+\usepackage[utf8]{vietnam}
+\usepackage[vietnamese=nohyphenation]{hyphsubst}
+\usepackage[english,vietnamese]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,mathrsfs}
+\usepackage[table,dvipsnames]{xcolor}
+\usepackage{booktabs}
+\usepackage{makecell}
+\usepackage{ragged2e}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{amsmath,amssymb,amsfonts,bm}
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage[inline,shortlabels]{enumitem}
+\usepackage{setspace}
+\usepackage[inkscapelatex=false]{svg}
+\usepackage{titling}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{framed}
+\usepackage{fancyhdr}
+\usepackage{upquote}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usepackage[framemethod=TikZ]{mdframed}
+\usetikzlibrary{matrix,fit,shadows,positioning,arrows.meta,calc,shapes.geometric,backgrounds,shapes.symbols}
+\usepackage{paracol}
+\usepackage{bbm}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{siunitx}
+\usepackage{fontawesome5}
+\usepackage{epigraph}
+\usepackage{titlesec}
+\usepackage[toc,page]{appendix}
+
+% Styles distributed with the supplied AIO2026 template.
+\usepackage{vipythonhighlight}
+\usepackage{tvietlistings}
+
+\usepackage[
+    backend=bibtex,
+    style=ieee,
+    citestyle=numeric-comp,
+    maxnames=1,
+    minnames=1,
+    uniquelist=false,
+    hyperref=false
+]{biblatex}
+\addbibresource{references.bib}
+\DefineBibliographyStrings{english}{andothers = {et\addabbrvspace al\adddot}}
+\AtBeginBibliography{\selectlanguage{english}}
+\renewcommand{\appendixtocname}{Phụ lục}
+\renewcommand{\appendixpagename}{Phụ lục}
+
+\usepackage{tocloft}
+\setlength{\headheight}{14.5pt}
+\setlength{\topmargin}{-.5in}
+\setlength{\textheight}{9.25in}
+\setlength{\oddsidemargin}{-.1in}
+\setlength{\textwidth}{6.8in}
+\setlength{\parskip}{0.3em}
+
+% Template colors and paper-style heading sizes.
+\definecolor{aivnGreen}{RGB}{52,79,30}
+\definecolor{aivnCodeOutputColor}{RGB}{11,83,148}
+\definecolor{captiongray}{gray}{0.15}
+\definecolor{captionbg}{RGB}{250,250,250}
+\definecolor{brandIndigo}{HTML}{333D91}
+\definecolor{rowLavender}{HTML}{EEECFA}
+
+\titleformat{\section}
+  {\normalfont\fontsize{16pt}{20pt}\selectfont\bfseries}
+  {\thesection}{0.85em}{}
+\titleformat{\subsection}
+  {\normalfont\fontsize{14pt}{16pt}\selectfont\bfseries}
+  {\thesubsection}{0.75em}{}
+\titleformat{\subsubsection}
+  {\normalfont\fontsize{12pt}{15pt}\selectfont\bfseries}
+  {\thesubsubsection}{0.65em}{}
+\titlespacing*{\section}{0pt}{1.25em plus .2em minus .1em}{.65em plus .1em minus .1em}
+\titlespacing*{\subsection}{0pt}{1em plus .2em minus .1em}{.45em plus .1em minus .1em}
+\titlespacing*{\subsubsection}{0pt}{.85em plus .15em minus .1em}{.35em plus .1em minus .1em}
+\renewcommand{\thesection}{\Roman{section}.}
+\renewcommand{\thesubsection}{\thesection\arabic{subsection}.}
+\renewcommand{\thesubsubsection}{\thesubsection\arabic{subsubsection}.}
+
+% Draft markers are visible while writing and should be resolved before submission.
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\newcommand{\keywords}[1]{\par\vspace{.4em}\noindent\textbf{Từ khóa:} #1\par}
+\newcommand{\TitleRule}{\rule{.90\textwidth}{.6pt}}
+\newlength{\TitleBlockHeight}
+\setlength{\TitleBlockHeight}{2.2cm}
+\setlength{\droptitle}{-6em}
+
+\pretitle{%
+  \begin{center}
+  \includegraphics[height=1.5cm]{template_assets/aio2026_logo.pdf}\par\vspace{.5em}
+  \TitleRule\par\nointerlineskip
+}
+\title{%
+  \parbox[c][\TitleBlockHeight][c]{.90\textwidth}{%
+    \centering\fontsize{20pt}{24pt}\selectfont\bfseries
+    Bổ sung giữa đặc trưng patch và phổ Fourier trong phát hiện khuôn mặt AI từ generator chưa gặp
+  }%
+}
+\posttitle{\par\nointerlineskip\TitleRule\end{center}}
+\preauthor{\begin{center}\fontsize{11pt}{13pt}\selectfont}
+\author{\textbf{Đinh Bảo Bảo}\quad \textbf{Nguyễn Thị Khánh Linh}\\[.5em]\textbf{Trần Tất Nguyên}\\[.5em]Báo cáo bài cuối kỳ AIO 2026}
+\postauthor{\par\end{center}}
+\date{Bản thảo báo cáo -- \today}
+
+% Running headers use the template palette without course contact details.
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{aivnGreen}{\bfseries FaceTrace}}
+\rhead{\textcolor{aivnGreen}{AIO 2026 -- Báo cáo cuối kỳ}}
+\fancyfoot[r]{\textcolor{aivnGreen}{\bfseries Trang \thepage}}
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\headrule}{{\color{aivnGreen}\hrule width\headwidth height\headrulewidth \vskip-\headrulewidth}}
+\renewcommand{\footrulewidth}{0pt}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\begin{abstract}
+\input{sections/abstract}
+\end{abstract}
+\input{sections/keywords}
+
+\input{sections/introduction}
+\input{sections/related_work}
+\input{sections/problem_and_data}
+\input{sections/methodology}
+\input{sections/experimental_setup}
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/limitations}
+\input{sections/conclusion}
+\input{sections/disclosures}
+
+\printbibliography[title={Tài liệu tham khảo}]
+
+\appendix
+\input{appendices/protocol}
+
+\end{document}
+

@@ -1,0 +1,83 @@
+\section{Kết quả}
+\subsection{Ảnh sạch và biến thiên qua seed}
+Bảng~\ref{tab:clean-results} tổng hợp mean và sample SD. L đạt AUROC 0.956849, cao hơn G 0.021624; BAcc tăng 0.030500, tức 3.05 điểm phần trăm. L vượt G ở cả seed 42/43/44 (Bảng~\ref{tab:clean-seeds}). G+L tốt hơn G nhưng thấp hơn L về cả mean AUROC và BAcc. Do chưa bootstrap trực tiếp L trừ G, các so sánh này là bằng chứng mô tả trên pilot.
+
+F có mean AUROC 0.969722 và BAcc 0.918958. SD AUROC của F là 0.009722, lớn hơn L (0.003097), cho thấy biến thiên quan sát được qua lần chạy lớn hơn. Không nên xem chênh lệch SD chỉ do initialization vì môi trường chạy có khác backend.
+
+\begin{table}[H]
+\centering
+\caption{Clean macro metrics qua ba seed. AUROC và BAcc là mean; SD là sample standard deviation.}
+\label{tab:clean-results}
+\input{tables/clean_results.tex}
+\end{table}
+
+\subsection{Lợi ích khi thêm forensic}
+L+F có mean AUROC cao nhất 0.985791, tăng 0.028942 so với L; BAcc tăng 0.073416, khoảng 7.34 điểm phần trăm. G+L+F tăng AUROC 0.030157 và BAcc 0.080834 so với G+L. Fusion ba nhánh đạt BAcc cao nhất nhưng AUROC thấp hơn L+F 0.000887. BAcc ba nhánh chỉ cao hơn L+F 0.001959; chưa có CI trực tiếp cho chênh lệch này nên không kết luận ưu thế thống kê.
+
+\begin{table}[H]
+\centering
+\caption{Clean paired AUROC differences và bootstrap percentile 95\% CI.}
+\label{tab:paired-ci}
+\input{tables/paired_ci.tex}
+\end{table}
+CI của L+F trừ L và G+L+F trừ G+L đều nằm trên 0 ở cả ba seed. Kết quả hỗ trợ clean gain trên test/checkpoint cố định; không chuyển thành claim trên mọi generator chưa gặp.
+
+\subsection{Khác biệt theo generator}
+Bảng~\ref{tab:per-generator} cho thấy L có mean AUROC 0.921183 trên STARGAN và 0.992515 trên StableDiffusion\_Inpainting. G cũng khó hơn trên STARGAN. F có xu hướng ngược lại: STARGAN 0.976590, SD Inpainting 0.962854.
+
+Khi ghép L+F, STARGAN tăng AUROC lên 0.979669; SD Inpainting đạt 0.991914, thấp hơn nhẹ L. Tuy vậy, BAcc của L+F tăng ở cả hai source. Vì vậy, macro gain không đồng nghĩa mọi source và mọi metric đều cải thiện. Khác biệt quan sát được chưa giải thích source nào để lại artifact vật lý gì.
+
+\subsection{Độ bền trước biến đổi ảnh}
+Bảng~\ref{tab:robustness-auroc} và Hình~\ref{fig:robustness} cho thấy spectral mạnh trên clean nhưng nhạy với hậu xử lý. Dưới JPEG q70, F giảm từ AUROC 0.969722 còn 0.460184; fusion ba nhánh giảm từ 0.984904 còn 0.736513. L còn 0.921856 và đạt mean AUROC cao nhất trong các cấu hình tại điều kiện này.
+
+\begin{table}[H]
+\centering
+\caption{Macro AUROC mean qua ba seed theo điều kiện độc lập. G: Global; L: Local; F: Forensic.}
+\label{tab:robustness-auroc}
+\input{tables/robustness_auroc.tex}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\input{figures/robustness_auroc.tex}
+\caption{Macro AUROC trung bình theo điều kiện. Mỗi biến đổi áp dụng độc lập từ ảnh gốc; các đường nối hỗ trợ đọc từng mô hình, không mô tả chuỗi biến đổi. Hình chỉ biểu diễn mean, không biểu diễn CI.}
+\label{fig:robustness}
+\end{figure}
+
+Resize cho F AUROC 0.702358, G+L+F 0.902062, thấp hơn G+L 0.930469. Blur cho F 0.682186 và G+L+F 0.873441, trong khi L giữ 0.951653. Vì vậy thêm F có thể làm fusion giảm khả năng xếp hạng so với baseline DINOv3.
+
+Center crop cho G+L+F mean AUROC cao nhất 0.937686. Tuy nhiên, L+F đạt 0.919182, thấp hơn L 0.928411. BAcc ở Bảng~\ref{tab:robustness-bacc} lại cho L+F cao hơn L sau crop: 0.862667 so với 0.763500. Các metric khác nhau mô tả các khía cạnh khác nhau của score và threshold.
+
+\begin{table}[H]
+\centering
+\caption{Macro BAcc mean qua seed, giữ threshold validation sạch cho mọi điều kiện.}
+\label{tab:robustness-bacc}
+\input{tables/robustness_bacc.tex}
+\end{table}
+
+\subsection{Lựa chọn cấu hình và rescue/harm}
+Ranking validation-only chọn G+L+F: validation macro AUROC mean 0.986532 và BAcc mean 0.953667. L+F đứng thứ hai với 0.985800 và 0.950792. Việc L+F có test AUROC cao hơn không được dùng để thay cấu hình chọn theo quy tắc validation.
+
+\begin{table}[H]
+\centering
+\caption{Rescue/harm trên 8.000 ảnh clean test khi thêm F vào baseline tương ứng, với threshold validation riêng.}
+\label{tab:rescue-harm}
+\input{tables/rescue_harm.tex}
+\end{table}
+Rescue lớn hơn harm cho cả hai fusion ở mọi seed. L+F thêm 416--725 dự đoán đúng; G+L+F thêm 503--724 so với baseline tương ứng. Fusion vẫn tạo lỗi mới, do đó net gain dương không có nghĩa mọi dự đoán đều cải thiện.
+
+\subsection{Shortcut diagnostic}
+\begin{table}[H]
+\centering
+\caption{Logistic regression diagnostic ở seed 42.}
+\label{tab:shortcut}
+\begin{tabular}{lrrr}
+\toprule
+Đặc trưng & Train AUROC & Val AUROC & Val BAcc \\
+\midrule
+File size & 0.780116 & 0.537581 & 0.747625 \\
+Thống kê đơn giản & 0.860288 & 0.600553 & 0.638750 \\
+\bottomrule
+\end{tabular}
+\end{table}
+Feature đơn giản có tín hiệu phân biệt trên validation. Diagnostic chưa có CI và chưa đo mức shortcut đóng góp vào neural model. Các số liệu hỗ trợ giữ giới hạn source confounding khi diễn giải kết quả.

@@ -1,0 +1,40 @@
+\section{Thiết lập thực nghiệm}
+\subsection{Huấn luyện và chọn mô hình}
+Các seed 42/43/44 dùng cùng manifest. Classifier train 20 epoch, batch size 32, AdamW, learning rate $10^{-3}$, weight decay $10^{-4}$, cross-entropy. Batch trích xuất feature có thể khác batch classifier; spectral config dùng batch ảnh 64 và batch classifier 32.
+
+Checkpoint chọn theo validation AUROC rồi BAcc tại threshold 0.5. Threshold cuối tối đa hóa validation BAcc, tie-break bằng F1 rồi khoảng cách tới 0.5. Fusion cũng chọn threshold validation; tất cả corruption giữ nguyên checkpoint/threshold.
+
+Cấu hình cuối xếp hạng theo validation macro AUROC mean qua seed, sau đó BAcc mean, AUROC SD nhỏ hơn và tiêu chí generator yếu nhất. Đây là chọn recipe, không chọn seed tốt nhất hoặc ensemble các seed. Quy tắc chọn dùng validation được phân biệt với chronology phát triển đã xem test ở phần giới hạn.
+
+\subsection{Metric và đơn vị phân tích}
+Quyết định là $\hat y=\mathbf{1}[p(x)\geq t]$. AUROC tính từ score liên tục; Balanced Accuracy:
+\begin{equation}
+\mathrm{BAcc}=\frac12\left(\frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}}+
+\frac{\mathrm{TN}}{\mathrm{TN}+\mathrm{FP}}\right).
+\end{equation}
+Accuracy/F1 là metric bổ sung. Mỗi generator row so 2.000 AI với cùng 4.000 real test (6.000 ảnh). Macro lấy trung bình hai generator; overall dùng 8.000 ID duy nhất. Do số AI mỗi source bằng nhau và real pool chung, macro AUROC/BAcc bằng overall trong thiết kế này; điều đó không áp dụng chung cho Accuracy/F1.
+
+Mean và sample SD ($ddof=1$) qua seed mô tả biến thiên trên cùng dataset. Chênh lệch 0.01 trên thang metric tương ứng một điểm phần trăm; ba seed không phải ba dataset độc lập.
+
+\subsection{Độ bền trước biến đổi}
+Năm điều kiện gồm clean và bốn biến đổi độc lập từ ảnh RGB gốc:
+\begin{itemize}[nosep]
+\item JPEG quality 70, subsampling 2;
+\item giảm về $112\times112$ rồi tăng về $224\times224$ bằng bilinear;
+\item Gaussian blur radius 1.0;
+\item crop vuông ở tâm với cạnh $\lfloor0.8\min(W,H)\rfloor$, rồi resize $224\times224$.
+\end{itemize}
+Crop 80\% là theo cạnh ngắn, không theo diện tích. Các corruption không nối tiếp. Mỗi seed có $5\times6=30$ dòng macro, tổng 90. Mỗi phép biến đổi chỉ có một mức cường độ, chưa phải khảo sát nhiều mức nén/blur.
+
+\subsection{Bootstrap và phân tích lỗi}
+Percentile bootstrap 95\% dùng 2.000 replicates, seed 2026, resample prediction theo cell source $\times$ label. Các model trong một paired comparison dùng chung indices; real pool giữ chung khi tính hai generator. Không inference hoặc train lại trong bootstrap.
+
+Ba cặp là L+F trừ L, G+L+F trừ G+L và F trừ L, cho AUROC/BAcc ở năm điều kiện. Output có 180 model-condition CI rows và 90 paired-difference rows. CI phản ánh resampling ảnh trên split/checkpoint cố định, chưa phản ánh bất định giữa generator hoặc cluster identity. Chưa có CI cho L trừ G, G+L+F trừ L+F và chưa hiệu chỉnh multiple comparisons.
+
+Rescue là baseline sai, fusion đúng; harm là baseline đúng, fusion sai. Net gain bằng rescue trừ harm, đo số ảnh đúng thêm. Model dùng threshold validation riêng nên kết quả phản ánh cả score lẫn điểm vận hành.
+
+\subsection{Shortcut và môi trường chạy}
+Shortcut diagnostic seed 42 dùng logistic regression fit trên train: một cấu hình chỉ dùng file size, cấu hình khác thêm luminance mean/std, saturation, gray-pixel fraction và edge. Đánh giá trên validation và không dùng để lựa chọn model theo test.
+
+Phase F ghi seed 42/43 dùng MPS, seed 44 CUDA. Khác biệt backend có thể góp phần vào SD; manifest checksum trùng chỉ xác nhận dữ liệu không đổi.
+\todo{Bổ sung hoặc xác nhận thiết bị từng giai đoạn, phiên bản thư viện, thời gian chạy và bộ nhớ từ metadata/log của nhóm.}

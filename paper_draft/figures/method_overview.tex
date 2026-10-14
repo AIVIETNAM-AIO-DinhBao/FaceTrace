@@ -1,0 +1,24 @@
+\resizebox{.98\linewidth}{!}{%
+\begin{tikzpicture}[
+box/.style={draw=aivnGreen,rounded corners,align=center,minimum height=1cm,text width=3.1cm,font=\small},
+smallbox/.style={box,text width=2.2cm},
+arrow/.style={->,>=Stealth,thick,draw=aivnGreen}]
+\node[smallbox] (rgb) at (-3.5,0) {Ảnh RGB\\$224\times224$};
+\node[box] (g) at (0,2.6) {DINOv3 đóng băng\\CLS token: 768-D};
+\node[box] (l) at (0,0) {DINOv3 đóng băng\\196 patch tokens\\Mean pooling: 768-D};
+\node[box] (f) at (0,-2.6) {Hann + FFT2\\Log-magnitude\\Radial bins: 192-D};
+\node[smallbox] (pg) at (4,2.6) {MLP $f_G$\\Xác suất $p_G$};
+\node[smallbox] (pl) at (4,0) {MLP $f_L$\\Xác suất $p_L$};
+\node[smallbox] (pf) at (4,-2.6) {MLP $f_F$\\Xác suất $p_F$};
+\node[box] (fuse) at (8,0) {Trung bình xác suất\\G+L;\ L+F;\ G+L+F\\Threshold validation};
+\draw[arrow] (rgb) |- (g);
+\draw[arrow] (rgb) -- (l);
+\draw[arrow] (rgb) |- (f);
+\draw[arrow] (g) -- (pg);
+\draw[arrow] (l) -- (pl);
+\draw[arrow] (f) -- (pf);
+\draw[arrow] (pg) -| (fuse);
+\draw[arrow] (pl) -- (fuse);
+\draw[arrow] (pf) -| (fuse);
+\end{tikzpicture}%
+}

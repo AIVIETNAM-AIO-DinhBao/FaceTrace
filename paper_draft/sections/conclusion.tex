@@ -1,0 +1,4 @@
+\section{Kết luận}
+FaceTrace khảo sát global, mean-pooled patch DINOv3 và Radial FFT trong phát hiện ảnh khuôn mặt AI theo nhãn của dataset. Trên pilot AI-Face với fixed generator holdout và ba seed, L vượt G về clean mean AUROC/BAcc. L+F đạt clean AUROC trung bình 0.985791; G+L+F đạt BAcc trung bình 0.952917. Paired bootstrap hỗ trợ lợi ích khi thêm F vào L hoặc G+L trên test sạch.
+
+JPEG và blur làm spectral/fusion suy giảm mạnh; crop và resize cho kết quả khác nhau giữa metric. Nghiên cứu cung cấp cả bằng chứng bổ trợ lẫn giới hạn của fusion trong pilot. Đóng góp chính là quy trình so sánh có kiểm soát cùng phân tích định lượng; kiểm chứng rộng hơn cần nhiều nguồn real, generator, split và dataset.

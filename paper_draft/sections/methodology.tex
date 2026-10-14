@@ -1,0 +1,47 @@
+\section{Phương pháp}
+\subsection{Tổng quan}
+FaceTrace huấn luyện ba nhánh độc lập G (Global), L (Local), F (Forensic). Mỗi nhánh tạo xác suất lớp AI; G+L, L+F và G+L+F là trung bình xác suất. Sáu cấu hình chỉ cần ba classifier huấn luyện cho mỗi seed.
+\begin{figure}[H]
+\centering
+\input{figures/method_overview.tex}
+\caption{Pipeline FaceTrace. G và L dùng cùng backbone DINOv3 đóng băng nhưng classifier riêng. Mỗi cấu hình dùng threshold validation riêng.}
+\label{fig:method}
+\end{figure}
+
+\subsection{Global DINOv3}
+Backbone \texttt{facebook/dinov3-vitb16-pretrain-lvd1689m} \cite{DINOv3_2025} được đóng băng, giữ chế độ đánh giá trong lúc train classifier. Ảnh dùng official image processor ở $224\times224$. Với CLS token $z_{\mathrm{CLS}}(x)\in\mathbb R^{768}$:
+\begin{equation}
+h_G(x)=z_{\mathrm{CLS}}(x),\quad
+p_G(x)=\operatorname{softmax}(f_G(h_G(x)))_1.
+\end{equation}
+$f_G$ là MLP $768\rightarrow256\rightarrow2$, GELU và dropout 0. Cache đặc trưng cho phép train classifier mà không chạy lại backbone mỗi epoch.
+
+\subsection{Local patch DINOv3}
+L dùng cùng backbone/preprocessing. Bỏ CLS và register tokens, lấy 196 spatial patch tokens $z_i(x)\in\mathbb R^{768}$:
+\begin{equation}
+h_L(x)=\frac1{196}\sum_{i=1}^{196}z_i(x),\quad
+p_L(x)=\operatorname{softmax}(f_L(h_L(x)))_1.
+\end{equation}
+$f_L$ cùng kiến trúc với $f_G$ nhưng train riêng. Giữ chiều feature và classifier tương ứng giúp tập trung so sánh representation. Mean pooling bỏ vị trí tường minh; L không dùng patch supervision, top-$k$ hoặc localization head.
+
+\subsection{Radial FFT}
+Ảnh được EXIF-transpose, chuyển RGB, resize vuông bilinear antialias về $224\times224$ và rescale $[0,1]$. Không dùng ImageNet normalization cho FFT. Với kênh $c$ và Hann window hai chiều đối xứng $w$:
+\begin{equation}
+S_c(u,v)=\log\left(1+
+\left|\operatorname{fftshift}(\operatorname{FFT2}(x_c\odot w))(u,v)\right|\right).
+\end{equation}
+FFT dùng chuẩn hóa \texttt{backward}. Miền bán kính từ tâm đến góc phổ được chia 64 bins. Với tập vị trí $\mathcal B_b$:
+\begin{equation}
+r_{c,b}(x)=\frac1{|\mathcal B_b|}\sum_{(u,v)\in\mathcal B_b}S_c(u,v).
+\end{equation}
+Ghép ba kênh thành $h_F(x)\in\mathbb R^{192}$. Mean/std chỉ fit trên train, rồi giữ cố định cho validation/test. MLP $192\rightarrow128\rightarrow2$ dùng GELU, dropout 0, có 24.962 tham số trainable.
+
+Radial averaging bỏ hướng và vị trí, magnitude bỏ phase. Nhánh này giúp đo giá trị của thống kê phổ gọn; kết quả không tự giải thích cơ chế artifact được phát hiện. Không có residual CNN, SRM, DCT hoặc AIDE trong F đã đánh giá.
+
+\subsection{Fusion và tính tương ứng đầu vào}
+\begin{align}
+p_{GL}&=(p_G+p_L)/2,\\
+p_{LF}&=(p_L+p_F)/2,\\
+p_{GLF}&=(p_G+p_L+p_F)/3.
+\end{align}
+Prediction ghép theo \texttt{image\_id}; seed, nhãn, source, split và manifest checksum phải tương ứng. Không train classifier fusion. Công thức ba nhánh lấy trung bình trực tiếp, tránh vô tình đổi trọng số bằng cách ghép F với G+L rồi chia hai. Mỗi cấu hình chọn threshold riêng trên validation. Trung bình score chưa calibration không bảo đảm xác suất từ các nhánh có cùng mức hiệu chỉnh.

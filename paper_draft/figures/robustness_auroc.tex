@@ -1,0 +1,18 @@
+\begin{tikzpicture}
+\begin{axis}[
+width=.96\linewidth,height=7cm,
+xmin=.8,xmax=5.2,ymin=.4,ymax=1.02,
+xtick={1,2,3,4,5},xticklabels={Sạch,JPEG q70,Resize,Blur,Crop},
+ylabel={Macro AUROC},grid=major,
+tick label style={font=\small},
+legend style={at={(.5,-.18)},anchor=north,font=\small},
+legend columns=3]
+\addplot+[mark=*] coordinates {(1,.935225)(2,.884857)(3,.906463)(4,.933965)(5,.916453)};
+\addplot+[mark=square*] coordinates {(1,.956849)(2,.921856)(3,.936192)(4,.951653)(5,.928411)};
+\addplot+[mark=triangle*] coordinates {(1,.954747)(2,.916203)(3,.930469)(4,.950635)(5,.928603)};
+\addplot+[mark=diamond*] coordinates {(1,.969722)(2,.460184)(3,.702358)(4,.682186)(5,.837569)};
+\addplot+[mark=pentagon*] coordinates {(1,.985791)(2,.701472)(3,.892205)(4,.865187)(5,.919182)};
+\addplot+[mark=x] coordinates {(1,.984904)(2,.736513)(3,.902062)(4,.873441)(5,.937686)};
+\legend{G,L,G+L,F,L+F,G+L+F}
+\end{axis}
+\end{tikzpicture}

@@ -1,0 +1,27 @@
+\section{Bài toán và dữ liệu}
+\subsection{Định nghĩa nhãn}
+Với ảnh khuôn mặt $x$, detector xuất score $p(x)$ cho nhãn AI. $y=0$ là ảnh thật và $y=1$ là \emph{ảnh khuôn mặt AI theo nhãn của dataset}. Quyết định cuối dùng threshold chọn trên validation. Các source có thể gắn với editing, translation hoặc inpainting; báo cáo giữ nghĩa nhãn dataset thay vì giả định tất cả ảnh AI sinh từ đầu.
+
+Gọi $\mathcal G_{\mathrm{tr}}$, $\mathcal G_{\mathrm{val}}$, $\mathcal G_{\mathrm{te}}$ là các source AI của train, validation và test. Protocol yêu cầu ba tập không giao nhau. Source chưa gặp có nghĩa source không nằm trong huấn luyện có giám sát của các nhánh; chưa có audit loại trừ tiếp xúc dữ liệu tương tự khi pretraining backbone.
+
+\subsection{Nguồn và split cố định}
+AI-Face là nguồn chính \cite{Lin_2025_CVPR}. Audit local ghi nhận 1.646.545 dòng annotation gộp từ train/test gốc; đây không phải số ảnh huấn luyện pilot. Các source được chọn đều có mặt trong cả hai split gốc, nên dùng nguyên split không đáp ứng mục tiêu generator holdout.
+
+Pilot lấy mẫu với seed 42: 16.000 ảnh thật từ \texttt{imdb\_wiki} và 16.000 ảnh AI từ tám source, mỗi source 2.000 ảnh. Gói runtime được báo cáo là \texttt{nguyentrann0703/aiface-pilot-32k-single-bin}, version 1. Seed huấn luyện 43/44 không lấy mẫu lại dữ liệu.
+
+\begin{table}[H]
+\centering
+\caption{Split cố định của pilot. Mỗi source AI đóng góp 2.000 ảnh.}
+\label{tab:dataset-split}
+\input{tables/dataset_split.tex}
+\end{table}
+Test có 8.000 ảnh gồm 4.000 real và 4.000 AI từ STARGAN và StableDiffusion\_Inpainting. Real có ID riêng giữa split nhưng cùng đến từ \texttt{imdb\_wiki}. Đây là một holdout source cố định, không phải nhiều fold leave-one-generator-out.
+
+\subsection{Audit và quality gate}
+Quy trình đọc annotation/source từ path, kiểm tra archive, dựng subset rồi kiểm tra decode, mode và hash. Ba duplicate real ban đầu được thay bằng candidate chưa chọn. Quality gate cuối ghi nhận 32.000 ảnh RGB đọc được, 32.000 SHA-256 duy nhất, không có missing file và không có source AI trùng giữa split.
+
+Hash duy nhất chỉ loại duplicate byte chính xác. Audit filename tạo identity hints, với giao train/validation 1.383, train/test 1.384 và validation/test 1.027 hints. Các con số này là giao giữa tập hints, không phải số ảnh overlap hay identity xác minh. Pilot được xác nhận generator-disjoint nhưng chưa identity-disjoint.
+
+\subsection{Phạm vi và điều kiện dữ liệu}
+Cân bằng hai lớp không loại trừ source shortcut do nén, resolution hoặc crop. Subset deepfake-video không nằm trong main experiment; các source editing/inpainting được giữ theo nhãn dataset. Nghiên cứu chưa đánh giá demographic fairness.
+\todo{Xác nhận AI-Face v2/annotation đã dùng, nguồn tải và điều kiện sử dụng trong báo cáo học phần; bổ sung hồ sơ hoặc liên kết dữ liệu của nhóm.}

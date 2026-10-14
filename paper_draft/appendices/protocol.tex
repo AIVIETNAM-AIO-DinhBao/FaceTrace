@@ -1,0 +1,32 @@
+\section{Chi tiết dữ liệu và protocol}
+\subsection{Generator mapping}
+\begin{table}[H]
+\centering
+\caption{Source AI theo split, theo metadata dataset.}
+\label{tab:generator-mapping}
+\input{tables/generator_mapping.tex}
+\end{table}
+
+\subsection{Clean test theo seed}
+\begin{table}[H]
+\centering
+\caption{Macro AUROC/BAcc theo seed trên cùng clean test manifest 8.000 ID.}
+\label{tab:clean-seeds}
+\input{tables/clean_by_seed.tex}
+\end{table}
+
+\subsection{Clean test theo generator}
+\begin{table}[H]
+\centering
+\caption{Clean mean AUROC/BAcc qua ba seed theo generator. Các mean được tính từ số sáu chữ số trong báo cáo kết quả; mỗi source dùng chung 4.000 ảnh thật.}
+\label{tab:per-generator}
+\input{tables/clean_by_generator.tex}
+\end{table}
+
+\subsection{Đơn vị phân tích và artifact}
+Mỗi generator row có 6.000 ảnh; cộng hai dòng không tạo test độc lập 12.000 ảnh vì real dùng chung. Overall chỉ dùng 8.000 ID. Không cộng net gain của các dòng source để suy ra overall.
+
+Báo cáo ghi manifest checksum trùng qua ba seed. Metadata cần giữ gồm seed, source mapping, checksum, resolved config, device, checkpoint policy, threshold và prediction theo ID. Bootstrap chỉ đọc prediction đã lưu; smoke metric không là kết quả nghiên cứu.
+
+Checkout hiện chưa chứa prediction/checkpoint Phase E/F đầy đủ; bản thảo dùng số liệu đã ghi trong báo cáo, chưa tính lại từ prediction gốc.
+\todo{Bổ sung archive và hồ sơ chạy; xác nhận bảng bài nộp khớp artifact của nhóm.}
