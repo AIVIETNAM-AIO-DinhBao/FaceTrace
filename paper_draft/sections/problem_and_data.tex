@@ -1,27 +1,29 @@
 \section{Bài toán và dữ liệu}
-\subsection{Định nghĩa nhãn}
-Với ảnh khuôn mặt $x$, detector xuất score $p(x)$ cho nhãn AI. $y=0$ là ảnh thật và $y=1$ là \emph{ảnh khuôn mặt AI theo nhãn của dataset}. Quyết định cuối dùng threshold chọn trên validation. Các source có thể gắn với editing, translation hoặc inpainting; báo cáo giữ nghĩa nhãn dataset thay vì giả định tất cả ảnh AI sinh từ đầu.
+\subsection{Nhãn và nguồn chưa gặp}
+Với ảnh khuôn mặt $x$, mô hình xuất xác suất $p(x)$ cho lớp AI. Nhãn được giữ theo dataset: $y=0$ là ảnh thật, $y=1$ là ảnh AI. Dự đoán cuối dùng ngưỡng chọn trên validation.
 
-Gọi $\mathcal G_{\mathrm{tr}}$, $\mathcal G_{\mathrm{val}}$, $\mathcal G_{\mathrm{te}}$ là các source AI của train, validation và test. Protocol yêu cầu ba tập không giao nhau. Source chưa gặp có nghĩa source không nằm trong huấn luyện có giám sát của các nhánh; chưa có audit loại trừ tiếp xúc dữ liệu tương tự khi pretraining backbone.
+Gọi $\mathcal G_{\mathrm{tr}}$, $\mathcal G_{\mathrm{val}}$ và $\mathcal G_{\mathrm{te}}$ là các generator của train, validation và test. Ba tập generator này không giao nhau. Trong báo cáo, generator chưa gặp là generator không xuất hiện khi huấn luyện có giám sát các nhánh. Dữ liệu pretraining của DINOv3 chưa được kiểm tra theo từng nguồn.
 
-\subsection{Nguồn và split cố định}
-AI-Face là nguồn chính \cite{Lin_2025_CVPR}. Audit local ghi nhận 1.646.545 dòng annotation gộp từ train/test gốc; đây không phải số ảnh huấn luyện pilot. Các source được chọn đều có mặt trong cả hai split gốc, nên dùng nguyên split không đáp ứng mục tiêu generator holdout.
+\subsection{Chọn dữ liệu và chia tập}
+Nhóm dùng AI-Face v2 \cite{Lin_2025_CVPR}. Annotation gồm \texttt{train\_data.csv} và \texttt{test\_data.csv}, nằm trong thư mục \nolinkurl{AI_Face_annotationsV2}. Audit ngày 07/10/2026 ghi nhận tổng 1.646.545 dòng annotation. Cả tám generator được chọn đều có mặt ở train và test gốc, nên dữ liệu được chia lại theo generator.
 
-Pilot lấy mẫu với seed 42: 16.000 ảnh thật từ \texttt{imdb\_wiki} và 16.000 ảnh AI từ tám source, mỗi source 2.000 ảnh. Gói chạy trên Kaggle là \href{https://www.kaggle.com/datasets/nguyentrann0703/aiface-pilot-32k-single-bin}{\texttt{aiface-pilot-32k-single-bin}} của tài khoản \texttt{nguyentrann0703}, version 1 theo metadata forensic seed 42. Đây là phiên bản gói pilot, không phải phiên bản của AI-Face gốc. Seed huấn luyện 43/44 không lấy mẫu lại dữ liệu.
+Pilot lấy 16.000 ảnh thật từ \texttt{imdb\_wiki} và 16.000 ảnh AI từ tám generator, mỗi generator 2.000 ảnh. Seed lấy mẫu là 42. Tập pilot được đóng gói thành \href{https://www.kaggle.com/datasets/nguyentrann0703/aiface-pilot-32k-single-bin}{\texttt{aiface-pilot-32k-single-bin}} để chạy trên Kaggle. Metadata forensic seed 42 ghi version 1 của gói pilot. Các lần train seed 43 và 44 dùng lại tập này.
 
 \begin{table}[H]
 \centering
-\caption{Split cố định của pilot. Mỗi source AI đóng góp 2.000 ảnh.}
+\caption{Cách chia tập pilot. Mỗi generator AI có 2.000 ảnh.}
 \label{tab:dataset-split}
 \input{tables/dataset_split.tex}
 \end{table}
-Test có 8.000 ảnh gồm 4.000 real và 4.000 AI từ STARGAN và StableDiffusion\_Inpainting. Real có ID riêng giữa split nhưng cùng đến từ \texttt{imdb\_wiki}. Đây là một holdout source cố định, không phải nhiều fold leave-one-generator-out.
 
-\subsection{Audit và quality gate}
-Quy trình đọc annotation/source từ path, kiểm tra archive, dựng subset rồi kiểm tra decode, mode và hash. Ba duplicate real ban đầu được thay bằng candidate chưa chọn. Quality gate cuối ghi nhận 32.000 ảnh RGB đọc được, 32.000 SHA-256 duy nhất, không có missing file và không có source AI trùng giữa split.
+Test gồm 8.000 ảnh: 4.000 ảnh thật và 4.000 ảnh AI từ STARGAN và StableDiffusion\_\allowbreak Inpainting. Hai generator này không xuất hiện trong train hoặc validation. Đánh giá hiện dùng một cách chia cố định, chưa chạy nhiều cách giữ lại generator khác nhau.
 
-Hash duy nhất chỉ loại duplicate byte chính xác. Audit filename tạo identity hints, với giao train/validation 1.383, train/test 1.384 và validation/test 1.027 hints. Các con số này là giao giữa tập hints, không phải số ảnh overlap hay identity xác minh. Pilot được xác nhận generator-disjoint nhưng chưa identity-disjoint.
+\subsection{Kiểm tra dữ liệu}
+Quy trình kiểm tra gồm đọc nhãn và nguồn từ annotation, kiểm tra archive, tạo subset rồi kiểm tra từng file ảnh. Ba ảnh thật trùng byte được thay bằng ảnh chưa chọn. Quality gate cuối ghi đủ 32.000 ảnh RGB đọc được, không thiếu file, có 32.000 SHA-256 khác nhau và không trùng generator giữa các split.
 
-\subsection{Phạm vi và điều kiện dữ liệu}
-Cân bằng hai lớp không loại trừ source shortcut do nén, resolution hoặc crop. Subset deepfake-video không nằm trong main experiment; các source editing/inpainting được giữ theo nhãn dataset. Nghiên cứu chưa đánh giá demographic fairness.
-Hồ sơ audit ngày 07/10/2026 xác định dữ liệu gốc là AI-Face v2, với annotation \texttt{AI\_Face\_annotationsV2/train\_data.csv} và \texttt{test\_data.csv}. Các archive đã kiểm tra gồm hai gói OneDrive và \texttt{imdb\_wiki.zip}. Repo chính thức của AI-Face cung cấp liên kết ảnh và annotation \cite{AI_Face_Repository}. Hồ sơ hiện có chưa lưu mã phiên bản hoặc hash của annotation gốc. Metadata gói forensic xác nhận split và số ảnh pilot nhưng không kèm metadata audit gốc, nên số liệu quality gate ở trên được dẫn từ báo cáo audit của nhóm. Điều kiện sử dụng dữ liệu được ghi ở phần thông tin nhóm.
+Kiểm tra hash chỉ loại ảnh trùng byte. Kiểm tra thêm tên file ghi nhận 1.383 dấu hiệu chung giữa train và validation, 1.384 giữa train và test, 1.027 giữa validation và test. Đây là kết quả kiểm tra theo tên file, chưa phải số người được xác minh. Vì vậy, chưa thể khẳng định các split không trùng danh tính.
+
+\subsection{Phạm vi dữ liệu}
+Pilot không dùng subset deepfake-video. Các nguồn chỉnh sửa, chuyển đổi và inpainting vẫn được giữ theo nhãn AI của dataset. Ảnh thật chỉ đến từ \texttt{imdb\_wiki}, nên mô hình có thể học khác biệt về nguồn ảnh, độ nén hoặc cách crop giữa hai lớp.
+
+Repo chính thức AI-Face cung cấp liên kết ảnh và annotation \cite{AI_Face_Repository}. Các số kiểm tra dữ liệu ở trên lấy từ báo cáo audit của nhóm. Gói forensic đang có không kèm đầy đủ metadata audit gốc.

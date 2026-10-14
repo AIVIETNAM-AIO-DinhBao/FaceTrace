@@ -1,24 +1,25 @@
 \section{Giới thiệu}
-\subsection{Bài toán và động lực}
-Nhận diện nguồn gốc ảnh là một bài toán trong phân tích tính xác thực của nội dung số. Với ảnh khuôn mặt, bộ phân loại có thể đạt hiệu năng cao trên dữ liệu cùng nguồn với huấn luyện nhưng thay đổi hành vi khi gặp generator mới hoặc ảnh bị nén, thu nhỏ hay làm mờ. AI-Face cung cấp dữ liệu từ nhiều nguồn cùng nhãn phục vụ nghiên cứu detector \cite{Lin_2025_CVPR}. Trong báo cáo này, \emph{ảnh khuôn mặt AI theo nhãn của dataset} chỉ lớp được dataset gán nhãn AI; cách gọi này không giả định mọi source đều sinh ảnh hoàn toàn từ đầu.
+\subsection{Bài toán đặt ra}
+Nhóm muốn biết Local và Forensic có giúp Global DINOv3 nhận diện ảnh khuôn mặt AI từ generator chưa gặp hay không. Để trả lời, train và test phải có nguồn ảnh AI khác nhau. Nếu chia ảnh ngẫu nhiên nhưng giữ cùng generator ở hai tập, điểm test chưa cho biết mô hình hoạt động thế nào khi nguồn sinh ảnh thay đổi.
 
-Wang và cộng sự ghi nhận khả năng chuyển giao từ detector huấn luyện trên ProGAN sang nhiều hệ thống sinh CNN khi dùng quy trình xử lý và tăng cường dữ liệu thích hợp \cite{Wang_2020_CVPR}. Ojha và cộng sự khảo sát giới hạn khi detector gặp các họ mô hình sinh mới và cách phân loại trên đặc trưng pretrained \cite{Ojha_2023_CVPR}. Các kết quả này tạo động lực đặt generator chưa gặp làm đơn vị kiểm tra trong FaceTrace.
+AI-Face được chọn vì dữ liệu có nhiều ảnh và phân chia theo nhiều generator, gồm các nguồn thuộc GAN và diffusion \cite{Lin_2025_CVPR}. Thông tin nguồn cho phép giữ riêng một số generator cho validation và test. Thí nghiệm còn thử JPEG, resize, blur và crop để kiểm tra kết quả khi ảnh bị xử lý lại.
 
-Nếu cùng generator xuất hiện ở train và test, detector có thể khai thác đặc điểm riêng của nguồn đó. Chia ảnh ngẫu nhiên còn có thể giữ lại khác biệt về resolution, nén hay cách crop giữa hai lớp. Vì vậy, FaceTrace dùng split theo generator cố định và đánh giá biến đổi ảnh như một trục riêng. Cân bằng nhãn hỗ trợ diễn giải metric nhưng không tự loại bỏ khác biệt giữa nguồn dữ liệu.
+Trong báo cáo, ảnh khuôn mặt AI được hiểu theo nhãn của dataset. Một số nguồn dùng chỉnh sửa, chuyển đổi hoặc inpainting. Lớp AI vì vậy không chỉ gồm ảnh sinh hoàn toàn từ đầu.
 
-\subsection{Lựa chọn biểu diễn và câu hỏi nghiên cứu}
-DINOv3 cung cấp đặc trưng toàn ảnh và patch từ cùng backbone pretrained \cite{DINOv3_2025}, cho phép so sánh hai cách tổng hợp token trong khi giữ backbone cố định. Nhánh global dùng CLS token; nhánh local lấy trung bình spatial patch tokens. Tên local mô tả nguồn token và không hàm ý mô hình đã định vị vùng giả mạo.
+\subsection{Cách tiếp cận}
+DINOv3 cho phép lấy CLS token và patch tokens từ cùng backbone \cite{DINOv3_2025}. Nhánh Global dùng CLS, còn Local dùng trung bình patch tokens. Backbone được giữ cố định, mỗi nhánh chỉ huấn luyện một MLP riêng. Cách làm này giúp so sánh hai loại đặc trưng với cùng kiến trúc classifier.
 
-Các nghiên cứu tần số cho thấy sai lệch phổ có thể là tín hiệu nhận diện ảnh sinh trong những thiết lập đã khảo sát \cite{Frank_2020_ICML,Durall_2020_CVPR}. FaceTrace bổ sung một nhánh Radial FFT + MLP nhẹ để kiểm tra tín hiệu này độc lập với DINOv3. Ghép bằng trung bình xác suất giúp đo giá trị bổ sung mà không huấn luyện classifier fusion có thêm tham số.
+Nhánh Radial FFT + MLP được thêm để kiểm tra thông tin trong phổ ảnh. Lựa chọn này dựa trên các nghiên cứu đã quan sát khác biệt tần số ở ảnh sinh \cite{Frank_2020_ICML,Durall_2020_CVPR}. Nhánh Forensic chạy độc lập với DINOv3. Fusion lấy trung bình xác suất của các nhánh.
 
-Nghiên cứu tập trung vào bốn câu hỏi:
+\subsection{Câu hỏi nghiên cứu và việc đã làm}
+Câu hỏi chính là: \emph{Các đặc trưng cục bộ và dấu vết forensic mức thấp có cung cấp thông tin bổ sung cho đặc trưng toàn ảnh của DINOv3 khi tổng quát hóa sang các nguồn ảnh AI chưa xuất hiện trong huấn luyện hay không?}
+
+Bốn phần cần kiểm tra là:
 \begin{enumerate}[nosep]
-\item Biểu diễn patch trung bình có cải thiện so với CLS toàn ảnh trên generator giữ lại không?
-\item Nhánh phổ có tăng hiệu năng khi ghép với Local hoặc Global + Local không?
-\item Thêm nhánh có tạo lợi ích nhất quán giữa các chỉ số đánh giá không?
-\item Lợi ích thay đổi thế nào dưới JPEG, resize, blur và center crop?
+\item Local có tốt hơn Global trên generator dành riêng cho test không?
+\item Thêm Forensic vào Local hoặc Global + Local có cải thiện kết quả không?
+\item Thêm nhánh có cải thiện đồng thời AUROC và Balanced Accuracy không?
+\item Kết quả thay đổi thế nào sau JPEG, resize, blur và crop?
 \end{enumerate}
-Sáu cấu hình được so sánh trên cùng manifest qua ba seed. Không có G+F trong thí nghiệm hiện tại, nên chưa cô lập tác động của forensic khi chỉ bổ sung vào global.
 
-\subsection{Đóng góp và phạm vi}
-Báo cáo trình bày quy trình audit pilot 32.000 ảnh; triển khai ba nhánh và ba tổ hợp fusion; đánh giá theo seed, source và điều kiện ảnh; cùng bootstrap và rescue/harm để phân tích chênh lệch. Đây là khảo sát representation và fusion trong khuôn khổ bài cuối kỳ AIO 2026. Đóng góp là kết quả thực nghiệm có kiểm soát trên pilot, chưa phải tuyên bố thuật toán mới hay ưu thế trên toàn bộ detector hiện có.
+Nhóm đã dựng và kiểm tra tập pilot 32.000 ảnh, huấn luyện ba nhánh, đánh giá sáu cấu hình qua ba seed, rồi tính bootstrap và số ảnh fusion sửa đúng hoặc làm sai thêm. Thí nghiệm chưa có Global + Forensic, nên chưa trả lời riêng tác động của Forensic khi chỉ ghép với Global.

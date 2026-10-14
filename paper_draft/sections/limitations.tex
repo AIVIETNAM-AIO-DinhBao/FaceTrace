@@ -1,17 +1,17 @@
-\section{Giới hạn và hướng phát triển}
-\subsection{Phạm vi dữ liệu}
-Một pilot, một fixed split và hai generator test giới hạn phạm vi kết luận. Ba seed không mở rộng số dataset/generator. Một cường độ mỗi corruption cũng chưa mô tả độ nhạy trên nhiều mức nén hay blur.
+\section{Giới hạn và bước tiếp theo}
+\subsection{Dữ liệu và cách chia}
+Đánh giá hiện giới hạn ở một tập pilot, một cách chia cố định và hai generator test. Ba seed chỉ thay đổi lần huấn luyện trên cùng dữ liệu. Kết quả chưa cho biết mô hình hoạt động thế nào với các generator khác hoặc những cách chia khác.
 
-Real chỉ từ \texttt{imdb\_wiki}; identity hints giao giữa split. Hash audit chưa bao phủ near-duplicate, cùng nội dung sau xử lý hoặc identity thật. Generator-disjoint không bảo đảm đã kiểm soát toàn bộ leakage. Nhóm source GANs/DMs cũng không thay thế taxonomy thao tác; báo cáo giữ nghĩa nhãn dataset.
+Ảnh thật chỉ lấy từ \texttt{imdb\_wiki}. Kiểm tra hash đã loại ảnh trùng byte, nhưng chưa loại ảnh gần trùng hoặc xác minh danh tính giữa các split. Tên file còn có dấu hiệu danh tính chung. Generator không giao nhau, nhưng chưa chứng minh toàn bộ nguy cơ trùng dữ liệu đã được loại bỏ.
 
-\subsection{Chronology và bất định}
-Tài liệu tổng kết ghi test đã được xem khi phát triển. Metadata seed 42 mang timestamp ngày 07/10/2026 lúc 23:05 cho forensic và 23:52 cho fusion, theo UTC+7. Báo cáo seed 42 đủ sáu cấu hình được commit ngày 08/10, trước các cập nhật Phase F ngày 13/10. Timestamp metadata không xác định thời điểm người thực hiện xem test hoặc khóa toàn bộ thiết kế nghiên cứu.
+Mỗi phép biến đổi mới được thử ở một mức. Chưa có kết quả ở nhiều mức nén JPEG, blur hoặc crop.
 
-Mã huấn luyện chọn checkpoint và threshold từ validation trước khi tính metric test của từng lần chạy. Mã xếp hạng cấu hình cũng chỉ dùng validation. Tuy nhiên, hồ sơ không có mốc khóa toàn bộ phương pháp trước lần đầu xem test. Vì vậy, nghiên cứu được trình bày như một pilot khám phá, không phải đánh giá test mù đã đăng ký trước.
+\subsection{Giới hạn khi chọn mô hình và tính khoảng tin cậy}
+Kết quả test seed 42 đã được xem trong giai đoạn phát triển, trước khi hoàn tất Phase F. Mã chọn checkpoint, ngưỡng và xếp hạng cấu hình chỉ dùng validation, nhưng hồ sơ chưa chứng minh toàn bộ phương pháp đã được chốt trước lần đầu xem test. Kết quả được trình bày như một khảo sát trên pilot.
 
-Bootstrap theo ảnh chưa xử lý identity cluster hoặc generator population; chưa hiệu chỉnh multiple comparisons và chỉ có CI cho các cặp đã thực hiện. Khác biệt backend còn có thể góp phần vào SD qua seed.
+Bootstrap lấy mẫu lại theo ảnh trên split và checkpoint cố định. Khoảng tin cậy chưa phản ánh khác biệt giữa các generator mới hoặc giữa các nhóm danh tính. Các phép kiểm tra nhiều cặp chưa được hiệu chỉnh, và chưa có CI trực tiếp cho Local so với Global hoặc giữa hai fusion có Forensic. Khác biệt backend suy luận cũng có thể góp phần vào chênh lệch điểm qua seed.
 
-\subsection{Phương pháp và bước tiếp theo}
-Fusion chưa calibration hoặc so sánh weighted/learned fusion. Chưa có G+F, LoRA, nhiều holdout split, external test hay attribution. Pretraining exposure của DINOv3 chưa được audit; unseen chỉ nói tới supervised branch training.
+\subsection{Các phần cần làm tiếp}
+Bước tiếp theo ưu tiên bổ sung nguồn ảnh thật, kiểm tra ảnh gần trùng và danh tính, rồi thử thêm generator và dataset. Các phép biến đổi cần được chạy ở nhiều mức cường độ.
 
-Hướng phát triển ưu tiên là nhiều nguồn real, kiểm tra identity/near-duplicate, đánh giá thêm generator/dataset và nhiều mức corruption. G+F giúp hoàn thiện ablation; calibration và weighted fusion giúp khảo sát score sau hậu xử lý. Phân tích định tính cần ảnh gốc và bằng chứng phù hợp trước khi giải thích cơ chế.
+Về phương pháp, Global + Forensic là cấu hình còn thiếu để so sánh đủ các cặp. Cần thử thêm hiệu chỉnh xác suất, fusion có trọng số và augmentation để xem có giữ được lợi ích Forensic sau xử lý ảnh hay không. LoRA chưa nằm trong các thí nghiệm đã báo cáo.

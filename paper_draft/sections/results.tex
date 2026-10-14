@@ -1,38 +1,43 @@
 \section{Kết quả}
-\subsection{Ảnh sạch và biến thiên qua seed}
-Bảng~\ref{tab:clean-results} tổng hợp mean và sample SD. L đạt AUROC 0.956849, cao hơn G 0.021624; BAcc tăng 0.030500, tức 3.05 điểm phần trăm. L vượt G ở cả seed 42/43/44 (Bảng~\ref{tab:clean-seeds}). G+L tốt hơn G nhưng thấp hơn L về cả mean AUROC và BAcc. Do chưa bootstrap trực tiếp L trừ G, các so sánh này là bằng chứng mô tả trên pilot.
+\subsection{Local tốt hơn Global trên ảnh sạch}
+Bảng~\ref{tab:clean-results} tổng hợp điểm trung bình và SD qua ba seed. Local-only đạt AUROC 0.956849, cao hơn Global-only 0.021624. BAcc tăng 0.030500. Local vượt Global ở cả seed 42, 43 và 44, như Bảng~\ref{tab:clean-seeds}.
 
-F có mean AUROC 0.969722 và BAcc 0.918958. SD AUROC của F là 0.009722, lớn hơn L (0.003097), cho thấy biến thiên quan sát được qua lần chạy lớn hơn. Không nên xem chênh lệch SD chỉ do initialization vì môi trường chạy có khác backend.
+Fusion Global + Local tốt hơn Global nhưng vẫn thấp hơn Local về AUROC và BAcc trung bình. Trong tập pilot này, thêm Global vào Local chưa cải thiện hai điểm trên.
+
+Forensic-only đạt AUROC 0.969722 và BAcc 0.918958. AUROC SD của Forensic là 0.009722, lớn hơn Local ở mức 0.003097. Điểm Forensic thay đổi nhiều hơn qua ba lần chạy, nhưng chưa tách được ảnh hưởng của huấn luyện và khác biệt môi trường.
 
 \begin{table}[H]
 \centering
-\caption{Clean macro metrics qua ba seed. AUROC và BAcc là mean; SD là sample standard deviation.}
+\caption{Điểm macro trên ảnh sạch qua ba seed. AUROC và BAcc là trung bình, SD là sample standard deviation.}
 \label{tab:clean-results}
 \input{tables/clean_results.tex}
 \end{table}
 
-\subsection{Lợi ích khi thêm forensic}
-L+F có mean AUROC cao nhất 0.985791, tăng 0.028942 so với L; BAcc tăng 0.073416, khoảng 7.34 điểm phần trăm. G+L+F tăng AUROC 0.030157 và BAcc 0.080834 so với G+L. Fusion ba nhánh đạt BAcc cao nhất nhưng AUROC thấp hơn L+F 0.000887. BAcc ba nhánh chỉ cao hơn L+F 0.001959; chưa có CI trực tiếp cho chênh lệch này nên không kết luận ưu thế thống kê.
+\subsection{Forensic giúp thêm ở đâu?}
+Local + Forensic đạt AUROC trung bình cao nhất, 0.985791. So với Local-only, AUROC tăng 0.028942 và BAcc tăng 0.073416. Khi thêm Forensic vào Global + Local, AUROC tăng 0.030157 và BAcc tăng 0.080834.
+
+Fusion ba nhánh đạt BAcc cao nhất. Tuy nhiên, AUROC thấp hơn Local + Forensic 0.000887, còn BAcc chỉ cao hơn 0.001959. Chênh lệch giữa hai fusion này chưa có khoảng tin cậy trực tiếp.
 
 \begin{table}[H]
 \centering
-\caption{Clean paired AUROC differences và bootstrap percentile 95\% CI.}
+\caption{Chênh lệch AUROC trên ảnh sạch và khoảng tin cậy bootstrap 95\%.}
 \label{tab:paired-ci}
 \input{tables/paired_ci.tex}
 \end{table}
-CI của L+F trừ L và G+L+F trừ G+L đều nằm trên 0 ở cả ba seed. Kết quả hỗ trợ clean gain trên test/checkpoint cố định; không chuyển thành claim trên mọi generator chưa gặp.
 
-\subsection{Khác biệt theo generator}
-Bảng~\ref{tab:per-generator} cho thấy L có mean AUROC 0.921183 trên STARGAN và 0.992515 trên StableDiffusion\_\allowbreak Inpainting. G cũng khó hơn trên STARGAN. F có xu hướng ngược lại: STARGAN 0.976590, SD Inpainting 0.962854.
+Khoảng tin cậy của L+F so với L và G+L+F so với G+L đều nằm trên 0 ở cả ba seed. Như vậy, thêm Forensic cải thiện AUROC trên tập test sạch đã dùng. Các khoảng tin cậy này tính trên checkpoint và split cố định.
 
-Khi ghép L+F, STARGAN tăng AUROC lên 0.979669; SD Inpainting đạt 0.991914, thấp hơn nhẹ L. Tuy vậy, BAcc của L+F tăng ở cả hai source. Vì vậy, macro gain không đồng nghĩa mọi source và mọi metric đều cải thiện. Khác biệt quan sát được chưa giải thích source nào để lại artifact vật lý gì.
+\subsection{Kết quả khác nhau giữa hai generator}
+Local đạt AUROC trung bình 0.921183 trên STARGAN và 0.992515 trên StableDiffusion\_\allowbreak Inpainting. Global cũng có điểm thấp hơn trên STARGAN. Forensic cho kết quả ngược lại, đạt 0.976590 trên STARGAN và 0.962854 trên SD Inpainting.
 
-\subsection{Độ bền trước biến đổi ảnh}
-Bảng~\ref{tab:robustness-auroc} và Hình~\ref{fig:robustness} cho thấy spectral mạnh trên clean nhưng nhạy với hậu xử lý. Dưới JPEG q70, F giảm từ AUROC 0.969722 còn 0.460184; fusion ba nhánh giảm từ 0.984904 còn 0.736513. L còn 0.921856 và đạt mean AUROC cao nhất trong các cấu hình tại điều kiện này.
+Sau fusion Local + Forensic, AUROC STARGAN tăng lên 0.979669. Trên SD Inpainting, điểm đạt 0.991914, thấp hơn nhẹ so với Local. BAcc của fusion tăng ở cả hai nguồn. Bảng~\ref{tab:per-generator} cho thấy điểm macro tăng không có nghĩa mọi chỉ số đều tăng trên từng generator.
+
+\subsection{Kết quả sau JPEG, resize, blur và crop}
+Forensic có điểm cao trên ảnh sạch nhưng giảm mạnh sau nén JPEG. Với quality 70, AUROC trung bình giảm từ 0.969722 còn 0.460184. Fusion ba nhánh giảm từ 0.984904 còn 0.736513. Local-only giữ được AUROC 0.921856, cao nhất trong sáu cấu hình ở điều kiện này.
 
 \begin{table}[H]
 \centering
-\caption{Macro AUROC mean qua ba seed theo điều kiện độc lập. G: Global; L: Local; F: Forensic.}
+\caption{Macro AUROC trung bình qua ba seed. Mỗi phép biến đổi được áp dụng riêng. G là Global, L là Local và F là Forensic.}
 \label{tab:robustness-auroc}
 \input{tables/robustness_auroc.tex}
 \end{table}
@@ -40,36 +45,37 @@ Bảng~\ref{tab:robustness-auroc} và Hình~\ref{fig:robustness} cho thấy spec
 \begin{figure}[H]
 \centering
 \input{figures/robustness_auroc.tex}
-\caption{Macro AUROC trung bình theo điều kiện. Mỗi biến đổi áp dụng độc lập từ ảnh gốc; các đường nối hỗ trợ đọc từng mô hình, không mô tả chuỗi biến đổi. Hình chỉ biểu diễn mean, không biểu diễn CI.}
+\caption{AUROC trung bình của sáu cấu hình trên ảnh sạch và sau xử lý. Các đường nối giúp đọc kết quả từng cấu hình, không biểu diễn chuỗi biến đổi. Hình chỉ thể hiện mean.}
 \label{fig:robustness}
 \end{figure}
 
-Resize cho F AUROC 0.702358, G+L+F 0.902062, thấp hơn G+L 0.930469. Blur cho F 0.682186 và G+L+F 0.873441, trong khi L giữ 0.951653. Vì vậy thêm F có thể làm fusion giảm khả năng xếp hạng so với baseline DINOv3.
+Sau resize, Forensic đạt AUROC 0.702358. Fusion ba nhánh đạt 0.902062, thấp hơn Global + Local ở mức 0.930469. Sau blur, Forensic còn 0.682186 và fusion ba nhánh còn 0.873441, trong khi Local đạt 0.951653. Thêm Forensic vào fusion vì vậy không còn giữ được lợi ích về AUROC ở hai điều kiện này.
 
-Center crop cho G+L+F mean AUROC cao nhất 0.937686. Tuy nhiên, L+F đạt 0.919182, thấp hơn L 0.928411. BAcc ở Bảng~\ref{tab:robustness-bacc} lại cho L+F cao hơn L sau crop: 0.862667 so với 0.763500. Các metric khác nhau mô tả các khía cạnh khác nhau của score và threshold.
+Crop cho kết quả khác. Fusion ba nhánh đạt AUROC cao nhất, 0.937686. Local + Forensic đạt 0.919182, thấp hơn Local ở mức 0.928411, nhưng BAcc lại cao hơn: 0.862667 so với 0.763500. Báo cáo giữ cả AUROC và BAcc vì hai chỉ số này có thể thay đổi khác nhau.
 
 \begin{table}[H]
 \centering
-\caption{Macro BAcc mean qua seed, giữ threshold validation sạch cho mọi điều kiện.}
+\caption{Macro BAcc trung bình qua ba seed. Mỗi cấu hình giữ ngưỡng chọn trên validation sạch.}
 \label{tab:robustness-bacc}
 \input{tables/robustness_bacc.tex}
 \end{table}
 
-\subsection{Lựa chọn cấu hình và rescue/harm}
-Ranking validation-only chọn G+L+F: validation macro AUROC mean 0.986532 và BAcc mean 0.953667. L+F đứng thứ hai với 0.985800 và 0.950792. Việc L+F có test AUROC cao hơn không được dùng để thay cấu hình chọn theo quy tắc validation.
+\subsection{Chọn cấu hình và kiểm tra lỗi fusion}
+Theo quy tắc xếp hạng trên validation, Global + Local + Forensic được chọn. Cấu hình này đạt AUROC validation trung bình 0.986532 và BAcc 0.953667. Local + Forensic đứng thứ hai với AUROC 0.985800 và BAcc 0.950792. Điểm test không được đưa vào phép xếp hạng này.
 
 \begin{table}[H]
 \centering
-\caption{Rescue/harm trên 8.000 ảnh clean test khi thêm F vào baseline tương ứng, với threshold validation riêng.}
+\caption{Số ảnh fusion sửa đúng và làm sai thêm trên 8.000 ảnh test sạch. Mỗi cấu hình dùng ngưỡng validation riêng.}
 \label{tab:rescue-harm}
 \input{tables/rescue_harm.tex}
 \end{table}
-Rescue lớn hơn harm cho cả hai fusion ở mọi seed. L+F thêm 416--725 dự đoán đúng; G+L+F thêm 503--724 so với baseline tương ứng. Fusion vẫn tạo lỗi mới, do đó net gain dương không có nghĩa mọi dự đoán đều cải thiện.
 
-\subsection{Shortcut diagnostic}
+Cả hai fusion đều sửa được nhiều ảnh hơn số ảnh làm sai thêm ở từng seed. Local + Forensic tăng số dự đoán đúng từ 416 đến 725 ảnh so với Local. Fusion ba nhánh tăng từ 503 đến 724 ảnh so với Global + Local. Fusion vẫn tạo ra lỗi mới, dù tổng số ảnh đúng tăng.
+
+\subsection{Đặc trưng đơn giản vẫn có tín hiệu phân biệt}
 \begin{table}[H]
 \centering
-\caption{Logistic regression diagnostic ở seed 42.}
+\caption{Kết quả logistic regression ở seed 42.}
 \label{tab:shortcut}
 \begin{tabular}{lrrr}
 \toprule
@@ -80,4 +86,5 @@ Thống kê đơn giản & 0.860288 & 0.600553 & 0.638750 \\
 \bottomrule
 \end{tabular}
 \end{table}
-Feature đơn giản có tín hiệu phân biệt trên validation. Diagnostic chưa có CI và chưa đo mức shortcut đóng góp vào neural model. Các số liệu hỗ trợ giữ giới hạn source confounding khi diễn giải kết quả.
+
+Chỉ dùng dung lượng file đã đạt AUROC validation 0.537581. Thêm các thống kê đơn giản đạt 0.600553. Kiểm tra này chưa có khoảng tin cậy, nhưng kết quả cho thấy các đặc trưng đơn giản vẫn có thể phân biệt hai lớp. Kiểm tra này chưa xác định được chúng ảnh hưởng bao nhiêu đến mô hình DINOv3 hoặc Forensic.

@@ -1,5 +1,7 @@
 # Bản đồ nguồn và phạm vi kết luận
 
+Sau lần chỉnh lời văn, báo cáo không còn phần Thông tin nhóm và khả năng tái lập. Một TODO được giữ ở appendices/protocol.tex để thành viên có artifact Phase F đối chiếu số liệu cuối. Các ghi chép nguồn bên dưới được giữ làm hồ sơ nội bộ, không phải toàn bộ nội dung xuất hiện trong PDF.
+
 ## Quyết định đã chốt
 
 Báo cáo bằng tiếng Việt, nộp cuối kỳ AIO 2026, không giới hạn trang/từ. Tác giả: Đinh Bảo Bảo, Nguyễn Thị Khánh Linh, Trần Tất Nguyên. Phạm vi nhãn là ảnh khuôn mặt AI theo nhãn của dataset.
@@ -47,7 +49,7 @@ SHA-256 ZIP fusion local khác SHA-256 8b62cec... được ghi ở mục 7.3 bá
 
 Commit f717877 của nguyentrann0703 thêm subset, audit và smoke. Commit 82a9a48 thêm baseline Global/Local. Các commit effd168, 63cf427 và 9f5893d thêm Phase F, khôi phục threshold từ validation và hoàn tất uncertainty/reporting. Profile GitHub nguyentrann0703 ghi tên Tran Tat Nguyen.
 
-Các commit 5910a4e, 7085064, eda43be và 2b0fa33 của khanhlinh-jnf thêm forensic, notebook fusion và đối chiếu báo cáo Phase E. Commit f82a116 của AIVIETNAM-AIO-DinhBao thêm bản thảo, bảng và hình LaTeX. Bản thảo chỉ ghi những công việc này, không suy tên người vận hành mọi run từ người viết mã.
+Các commit 5910a4e, 7085064, eda43be và 2b0fa33 của khanhlinh-jnf thêm forensic, notebook fusion và đối chiếu báo cáo Phase E. Commit f82a116 của AIVIETNAM-AIO-DinhBao thêm bản thảo, bảng và hình LaTeX. Các mốc được giữ để đối chiếu công việc, không suy tên người vận hành mọi run từ người viết mã.
 
 Timestamp metadata seed 42 được chuyển sang UTC+7 là 23:05 và 23:52 ngày 07/10. Báo cáo đủ sáu cấu hình được commit 00:09 ngày 08/10. Các cập nhật Phase F là ngày 13/10. Đây là mốc hồ sơ, không phải timestamp người dùng mở test hoặc bằng chứng đăng ký trước phương pháp.
 

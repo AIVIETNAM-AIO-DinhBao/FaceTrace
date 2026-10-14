@@ -1,42 +1,41 @@
 \section{Thiết lập thực nghiệm}
-\subsection{Huấn luyện và chọn mô hình}
-Các seed 42/43/44 dùng cùng manifest. Classifier train 20 epoch, batch size 32, AdamW, learning rate $10^{-3}$, weight decay $10^{-4}$, cross-entropy. Batch trích xuất feature có thể khác batch classifier; spectral config dùng batch ảnh 64 và batch classifier 32.
+\subsection{Train và chọn checkpoint}
+Các lần train dùng seed 42, 43 và 44 trên cùng manifest. Mỗi classifier chạy 20 epoch, batch size 32, optimizer AdamW, learning rate $10^{-3}$, weight decay $10^{-4}$ và cross-entropy loss. Nhánh Forensic dùng batch ảnh 64 khi trích xuất FFT.
 
-Checkpoint chọn theo validation AUROC rồi BAcc tại threshold 0.5. Threshold cuối tối đa hóa validation BAcc, tie-break bằng F1 rồi khoảng cách tới 0.5. Fusion cũng chọn threshold validation; tất cả corruption giữ nguyên checkpoint/threshold.
+Checkpoint được chọn theo AUROC validation. Nếu AUROC bằng nhau, BAcc tại ngưỡng 0.5 được dùng để chọn. Sau khi chọn checkpoint, ngưỡng được chọn theo BAcc validation cao nhất, tiếp đến F1 cao nhất và gần 0.5 nhất nếu còn bằng nhau. Fusion cũng chọn ngưỡng trên validation. Các lần thử ảnh sau xử lý giữ nguyên checkpoint và ngưỡng này.
 
-Cấu hình cuối xếp hạng theo validation macro AUROC mean qua seed, sau đó BAcc mean, AUROC SD nhỏ hơn và tiêu chí generator yếu nhất. Đây là chọn recipe, không chọn seed tốt nhất hoặc ensemble các seed. Quy tắc chọn dùng validation được phân biệt với chronology phát triển đã xem test ở phần giới hạn.
+Cấu hình cuối được xếp hạng theo macro AUROC validation trung bình qua ba seed, rồi BAcc trung bình, AUROC SD nhỏ hơn và AUROC của generator yếu nhất. Quy tắc này chọn cấu hình, không lấy seed tốt nhất làm kết quả chính hoặc ensemble ba seed.
 
-\subsection{Metric và đơn vị phân tích}
-Quyết định là $\hat y=\mathbf{1}[p(x)\geq t]$. AUROC tính từ score liên tục; Balanced Accuracy:
+\subsection{Cách tính điểm}
+Dự đoán nhãn là $\hat y=\mathbf{1}[p(x)\geq t]$. AUROC được tính từ xác suất liên tục. Balanced Accuracy được tính bằng:
 \begin{equation}
 \mathrm{BAcc}=\frac12\left(\frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}}+
 \frac{\mathrm{TN}}{\mathrm{TN}+\mathrm{FP}}\right).
 \end{equation}
-Accuracy/F1 là metric bổ sung. Mỗi generator row so 2.000 AI với cùng 4.000 real test (6.000 ảnh). Macro lấy trung bình hai generator; overall dùng 8.000 ID duy nhất. Do số AI mỗi source bằng nhau và real pool chung, macro AUROC/BAcc bằng overall trong thiết kế này; điều đó không áp dụng chung cho Accuracy/F1.
+Accuracy và F1 được tính thêm để so sánh. Mỗi dòng theo generator gồm 2.000 ảnh AI và cùng 4.000 ảnh thật, tổng 6.000 ảnh. Điểm macro là trung bình của hai dòng generator, còn điểm overall dùng 8.000 ảnh test duy nhất.
 
-Mean và sample SD ($ddof=1$) qua seed mô tả biến thiên trên cùng dataset. Chênh lệch 0.01 trên thang metric tương ứng một điểm phần trăm; ba seed không phải ba dataset độc lập.
+Do hai generator có cùng số ảnh AI và dùng chung ảnh thật, macro AUROC và BAcc bằng điểm overall trong tập test này. Accuracy và F1 không có tính chất đó.
 
-\subsection{Độ bền trước biến đổi}
-Năm điều kiện gồm clean và bốn biến đổi độc lập từ ảnh RGB gốc:
+Kết quả được báo cáo bằng mean và sample SD qua ba seed, với $ddof=1$. Ba seed dùng cùng dữ liệu, nên SD mô tả chênh lệch giữa các lần chạy trên tập pilot.
+
+\subsection{Thử ảnh sau xử lý}
+Đánh giá gồm ảnh sạch và bốn phép biến đổi:
 \begin{itemize}[nosep]
-\item JPEG quality 70, subsampling 2;
-\item giảm về $112\times112$ rồi tăng về $224\times224$ bằng bilinear;
-\item Gaussian blur radius 1.0;
-\item crop vuông ở tâm với cạnh $\lfloor0.8\min(W,H)\rfloor$, rồi resize $224\times224$.
+\item Nén JPEG với quality 70 và subsampling 2.
+\item Resize về $112\times112$ rồi tăng lại $224\times224$ bằng bilinear.
+\item Gaussian blur với radius 1.0.
+\item Crop vuông ở tâm, cạnh bằng $\lfloor0.8\min(W,H)\rfloor$, rồi resize về $224\times224$.
 \end{itemize}
-Crop 80\% là theo cạnh ngắn, không theo diện tích. Các corruption không nối tiếp. Mỗi seed có $5\times6=30$ dòng macro, tổng 90. Mỗi phép biến đổi chỉ có một mức cường độ, chưa phải khảo sát nhiều mức nén/blur.
+Mỗi biến đổi được áp dụng riêng từ ảnh RGB gốc. Crop 80\% tính theo cạnh ngắn của ảnh. Thí nghiệm chưa thử nhiều mức nén, blur hoặc crop. Mỗi seed có $5\times6=30$ kết quả theo điều kiện và mô hình, tổng cộng 90.
 
-\subsection{Bootstrap và phân tích lỗi}
-Percentile bootstrap 95\% dùng 2.000 replicates, seed 2026, resample prediction theo cell source $\times$ label. Các model trong một paired comparison dùng chung indices; real pool giữ chung khi tính hai generator. Không inference hoặc train lại trong bootstrap.
+\subsection{Bootstrap và ảnh fusion sửa đúng hoặc làm sai}
+Khoảng tin cậy được tính bằng percentile bootstrap 95\% với 2.000 lần lấy mẫu, seed 2026. Prediction được lấy mẫu lại theo nhóm nguồn ảnh và nhãn. Các mô hình trong cùng phép so sánh dùng chung chỉ số lấy mẫu, còn 4.000 ảnh thật vẫn được dùng chung khi tính điểm hai generator.
 
-Ba cặp là L+F trừ L, G+L+F trừ G+L và F trừ L, cho AUROC/BAcc ở năm điều kiện. Output có 180 model-condition CI rows và 90 paired-difference rows. CI phản ánh resampling ảnh trên split/checkpoint cố định, chưa phản ánh bất định giữa generator hoặc cluster identity. Chưa có CI cho L trừ G, G+L+F trừ L+F và chưa hiệu chỉnh multiple comparisons.
+Ba cặp đã kiểm tra là L+F so với L, G+L+F so với G+L và F so với L, cho AUROC và BAcc ở cả năm điều kiện. Kết quả gồm 180 dòng khoảng tin cậy theo mô hình và điều kiện, cùng 90 dòng cho chênh lệch giữa các cặp. Bootstrap chỉ dùng prediction đã lưu, không train hoặc suy luận lại.
 
-Rescue là baseline sai, fusion đúng; harm là baseline đúng, fusion sai. Net gain bằng rescue trừ harm, đo số ảnh đúng thêm. Model dùng threshold validation riêng nên kết quả phản ánh cả score lẫn điểm vận hành.
+Rescue là ảnh baseline đoán sai nhưng fusion đoán đúng. Harm là trường hợp ngược lại. Net gain bằng rescue trừ harm, cho biết số ảnh đúng thêm sau fusion. Mỗi cấu hình dùng ngưỡng riêng đã chọn trên validation.
 
-\subsection{Shortcut và môi trường chạy}
-Shortcut diagnostic seed 42 dùng logistic regression fit trên train: một cấu hình chỉ dùng file size, cấu hình khác thêm luminance mean/std, saturation, gray-pixel fraction và edge. Đánh giá trên validation và không dùng để lựa chọn model theo test.
+\subsection{Kiểm tra đặc trưng đơn giản và môi trường chạy}
+Logistic regression được train ở seed 42 để xem đặc trưng đơn giản có phân biệt được hai lớp không. Một cấu hình chỉ dùng dung lượng file. Cấu hình còn lại thêm mean và standard deviation độ sáng, độ bão hòa, tỷ lệ pixel xám và đặc trưng cạnh. Model được train trên train và đánh giá trên validation.
 
-Metadata baseline seed 42 ghi backend CUDA. File môi trường trong ZIP forensic seed 42 ghi GPU Tesla T4, Python 3.13.15, PyTorch 2.11.0+cu128, torchvision 0.26.0+cu128, NumPy 2.1.3, pandas 2.3.3, Pillow 12.3.0 và scikit-learn 1.6.1. Fusion seed 42 ngày 07/10 trong ZIP chạy CPU với Python 3.13.15 và PyTorch 2.11.0+cpu. Những phiên bản này chỉ mô tả các lần chạy có file môi trường đã đối chiếu.
-
-Báo cáo Phase F ghi backend suy luận MPS cho seed 42/43 và CUDA cho seed 44. Thông tin này không xác định thiết bị huấn luyện của từng seed. Khác biệt backend có thể góp phần vào chênh lệch score khi suy luận. Các ZIP seed 42 cũ cũng khác nhẹ về score và threshold so với bộ kết quả Phase F, nên bảng cuối dùng thống nhất số Phase F. Hồ sơ hiện có chưa đủ để xác định toàn bộ nguyên nhân của chênh lệch.
-\todo{Bổ sung file môi trường của baseline seed 42, các lần train seed 43/44 và Phase F, gồm model revision DINOv3, phiên bản transformers, thời gian chạy và bộ nhớ đo được.}
+Metadata seed 42 ghi baseline chạy CUDA, Forensic chạy Tesla T4 và fusion chạy CPU. File môi trường Forensic ghi Python 3.13.15 và PyTorch 2.11.0+cu128. Fusion dùng Python 3.13.15 và PyTorch 2.11.0+cpu. Báo cáo Phase F ghi backend suy luận MPS cho seed 42/43 và CUDA cho seed 44. Đây là thông tin backend của từng giai đoạn, không phải xác nhận thiết bị train cho tất cả các seed.

@@ -1,22 +1,22 @@
 \section{Thảo luận}
-\subsection{Đóng góp của representation}
-L vượt G trên clean test cả ba seed, cho thấy mean-pooled patch là baseline hiệu quả hơn CLS-only trong pilot. Giữ backbone và classifier tương ứng hỗ trợ liên hệ chênh lệch với representation; tuy nhiên chưa có paired CI cho L trừ G và không có localization supervision.
+\subsection{Local và Forensic đã giúp thế nào?}
+Local vượt Global trên ảnh sạch ở cả ba seed. Với cùng DINOv3 và kiến trúc classifier, kết quả cho thấy lấy trung bình patch tokens phù hợp hơn CLS token trong tập pilot này. Chưa có khoảng tin cậy trực tiếp cho Local so với Global, nên nhận xét này dựa trên xu hướng điểm qua ba lần chạy.
 
-L+F và G+L+F có paired clean AUROC gain với CI dương. Rescue lớn hơn harm cũng cho thấy sửa được nhiều lỗi hơn số lỗi mới ở threshold đã chọn. Đây là bằng chứng bổ trợ ở dự đoán, chưa chứng minh representation độc lập hoặc một fingerprint vật lý bất biến theo generator.
+Forensic cải thiện AUROC khi ghép với Local hoặc Global + Local trên ảnh sạch. Khoảng tin cậy cho chênh lệch đều dương. Số ảnh sửa đúng cũng lớn hơn số ảnh làm sai thêm. Đây là kết quả cho thấy các nhánh có thể bổ sung nhau ở dự đoán, chưa giải thích được từng loại dấu vết trong ảnh.
 
-Lợi ích không tăng đơn điệu theo số nhánh. G+L có mean clean AUROC/BAcc thấp hơn L; G+L+F có AUROC thấp hơn L+F nhưng BAcc cao hơn. Thêm G có thể tác động khác nhau tới thứ tự score và quyết định tại threshold. Việc thêm representation cần đánh giá bằng ablation phù hợp.
+Thêm nhánh không đồng nghĩa điểm luôn tăng. Global + Local thấp hơn Local về AUROC và BAcc trung bình. Fusion ba nhánh có BAcc cao hơn Local + Forensic nhưng AUROC thấp hơn. Cần đọc cả hai chỉ số khi so sánh, vì chưa có fusion nào tốt hơn ở mọi chỉ số.
 
-\subsection{Biến đổi ảnh và threshold}
-JPEG/blur làm F và fusion có F suy giảm rõ rệt về AUROC. Hành vi này tương thích với độ nhạy của thống kê phổ đối với hậu xử lý, nhưng chưa có attribution hoặc phân tích từng feature để quy nguyên nhân cho artifact cụ thể.
+\subsection{Vì sao cần kiểm tra ảnh sau xử lý?}
+Lợi ích Forensic trên ảnh sạch giảm rõ sau JPEG và blur. Kết quả phù hợp với việc đặc trưng phổ nhạy với xử lý ảnh, nhưng từng bin FFT chưa được phân tích để xác định nguyên nhân cụ thể.
 
-Resize cho G+L+F BAcc gần G+L nhưng AUROC thấp hơn. Crop cho G+L+F AUROC cao nhất; L+F AUROC thấp hơn L nhưng BAcc cao hơn. Vì vậy cần báo cáo cả metric ranking và metric threshold. Blur làm fusion ba nhánh AUROC còn 0.873441 nhưng BAcc chỉ 0.572750: score vẫn phân biệt được phần nào nhưng threshold validation sạch không chuyển giao tốt.
+Ngưỡng phân loại cũng ảnh hưởng đến cách đọc kết quả. Sau blur, fusion ba nhánh còn AUROC 0.873441 nhưng BAcc chỉ 0.572750. Khả năng xếp hạng ảnh chưa giảm tương ứng với số dự đoán đúng ở ngưỡng đã chọn trên validation sạch. Sau crop, Local + Forensic có AUROC thấp hơn Local nhưng BAcc cao hơn.
 
-Kết quả ủng hộ bổ trợ trên clean pilot, chưa ủng hộ lợi ích chung dưới mọi corruption. Calibration, fusion có trọng số và augmentation là hướng kiểm chứng tiếp theo; hiệu quả chưa được đo ở đây.
+Các lần thử này cho thấy cần kiểm tra riêng từng phép biến đổi. Fusion tốt trên ảnh sạch chưa đủ để dùng cho ảnh đã bị nén hoặc làm mờ.
 
-\subsection{Source và shortcut}
-Hai nhánh DINOv3 và F có mức độ khó khác nhau theo source. Fusion có thể tốt trên metric gộp nhưng giảm một metric của một source; các dòng source dùng chung real nên không là test độc lập.
+\subsection{Ảnh hưởng của nguồn dữ liệu}
+Hai nhánh DINOv3 và Forensic có mức độ khó khác nhau trên STARGAN và SD Inpainting. Điểm gộp có thể tăng trong khi một chỉ số của một generator giảm. Hai dòng generator còn dùng chung ảnh thật, nên không phải hai tập test độc lập.
 
-Validation AUROC trên mức ngẫu nhiên của shortcut diagnostic cho thấy tín hiệu từ feature đơn giản vẫn tồn tại. Logistic regression thấp hơn neural model không chứng minh shortcut đã bị loại bỏ và không đo được tỷ lệ hiệu năng do source confounding. Nhiều nguồn real và preprocessing được kiểm soát sẽ giúp phân tích mạnh hơn.
+Logistic regression trên đặc trưng đơn giản đạt AUROC validation trên 0.5. Chưa loại được khả năng mô hình học khác biệt về nguồn ảnh giữa hai lớp. Việc chỉ dùng ảnh thật từ \texttt{imdb\_wiki} là giới hạn cần giữ khi diễn giải kết quả.
 
 \subsection{Trả lời câu hỏi nghiên cứu}
-Local cải thiện mô tả so với global trên clean; spectral bổ sung cho L và G+L trên clean với paired evidence; thêm nhánh không cải thiện thống nhất mọi metric; robustness phụ thuộc corruption. LoRA, G+F và chuyển giao dataset khác vẫn là câu hỏi mở, không phải kết quả đã có.
+Trong tập pilot sạch, Local tốt hơn Global và Forensic giúp tăng AUROC khi ghép với Local hoặc Global + Local. Tuy nhiên, hiệu quả phụ thuộc chỉ số và phép xử lý ảnh. Thí nghiệm chưa có Global + Forensic để đo riêng việc thêm Forensic vào Global, và chưa kiểm tra trên dataset khác.

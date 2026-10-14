@@ -1,36 +1,31 @@
-\section{Chi tiết dữ liệu và protocol}
-\subsection{Generator mapping}
+\section{Chi tiết dữ liệu và kết quả}
+\subsection{Generator theo từng split}
 \begin{table}[H]
 \centering
-\caption{Source AI theo split, theo metadata dataset.}
+\caption{Các generator AI trong tập pilot.}
 \label{tab:generator-mapping}
 \input{tables/generator_mapping.tex}
 \end{table}
 
-\subsection{Clean test theo seed}
+\subsection{Kết quả ảnh sạch theo seed}
 \begin{table}[H]
 \centering
-\caption{Macro AUROC/BAcc theo seed trên cùng clean test manifest 8.000 ID.}
+\caption{Macro AUROC và BAcc theo seed trên cùng 8.000 ảnh test sạch.}
 \label{tab:clean-seeds}
 \input{tables/clean_by_seed.tex}
 \end{table}
 
-\subsection{Clean test theo generator}
+\subsection{Kết quả ảnh sạch theo generator}
 \begin{table}[H]
 \centering
-\caption{Clean mean AUROC/BAcc qua ba seed theo generator. Các mean được tính từ số sáu chữ số trong báo cáo kết quả; mỗi source dùng chung 4.000 ảnh thật.}
+\caption{AUROC và BAcc trung bình qua ba seed theo generator. Mean được tính từ số sáu chữ số trong báo cáo Phase F. Mỗi generator dùng chung 4.000 ảnh thật.}
 \label{tab:per-generator}
 \input{tables/clean_by_generator.tex}
 \end{table}
 
-\subsection{Đơn vị phân tích và artifact}
-Mỗi generator row có 6.000 ảnh; cộng hai dòng không tạo test độc lập 12.000 ảnh vì real dùng chung. Overall chỉ dùng 8.000 ID. Không cộng net gain của các dòng source để suy ra overall.
+\subsection{Nguồn số liệu}
+Mỗi dòng generator có 6.000 ảnh nhưng tổng test vẫn là 8.000 ảnh duy nhất, vì 4.000 ảnh thật được dùng chung. Số ảnh fusion sửa đúng và làm sai thêm của từng generator không được cộng để suy ra kết quả overall.
 
-Báo cáo ghi manifest checksum trùng qua ba seed. Metadata cần giữ gồm seed, source mapping, checksum, resolved config, device, checkpoint policy, threshold và prediction theo ID. Bootstrap chỉ đọc prediction đã lưu; smoke metric không là kết quả nghiên cứu.
+Các bảng cuối lấy thống nhất từ \texttt{docs/aiface-complete-results.md} và đã được đối chiếu với báo cáo này. Hai ZIP seed 42 cũ cũng đã được kiểm tra từ prediction, nhưng có một số điểm khác nhẹ với Phase F. Forensic-only trong ZIP cũ có AUROC 0.958515 và BAcc 0.898750, còn báo cáo Phase F ghi 0.958504 và 0.898875. Bộ artifact Phase F đầy đủ chưa có trong checkout hiện tại.
 
-Checkout hiện chưa chứa đầy đủ prediction và checkpoint Phase E/F. Các bảng clean, robustness và khoảng tin cậy đã được đối chiếu với \texttt{docs/aiface-complete-results.md}. Bảng mean theo generator được tính lại từ các dòng sáu chữ số trong báo cáo đó.
-
-Hai gói \texttt{facetrace\_spectral\_artifacts.zip} và \texttt{facetrace\_fusion\_artifacts.zip} chứa các lần chạy seed 42 ngày 07/10/2026, trước Phase F. Gói spectral giữ checkpoint, prediction validation/test và file môi trường. Gói fusion giữ prediction test của sáu cấu hình và prediction validation của hai fusion. Tính lại metric test, công thức fusion và rescue/harm từ CSV trong các gói này khớp kết quả lưu cùng ZIP.
-
-Các ZIP cũ không trùng hoàn toàn số Phase F. Chẳng hạn, Forensic-only seed 42 trong ZIP cũ có AUROC 0.958515 và BAcc 0.898750, còn báo cáo Phase F ghi 0.958504 và 0.898875. Bản thảo giữ số Phase F để thống nhất qua ba seed. Những kiểm tra trên ZIP cũ không được xem là xác minh prediction gốc của toàn bộ bảng cuối.
-\todo{Bổ sung artifact Phase F seed 42/43/44 cùng output bootstrap và model selection, rồi đối chiếu bảng cuối với prediction của chính bộ artifact đó.}
+\todo{Thành viên giữ artifact Phase F: đối chiếu bảng cuối với prediction seed 42/43/44, output bootstrap và model selection, rồi cập nhật phần nguồn số liệu và xóa TODO này.}
